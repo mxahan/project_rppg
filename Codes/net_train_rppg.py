@@ -90,7 +90,7 @@ num_classes = 80 # total classes (0-9 digits).
 num_features = 50*50*40 # data features (img shape: 28*28).
 
 # Training parameters.
-learning_rate = 0.01
+learning_rate = 0.0001
 training_steps = 40000
 batch_size = 8
 display_step = 50
@@ -109,15 +109,14 @@ trX, teX, trY, teY = train_test_split(trainX , trainY, test_size = .1, random_st
 train_data = tf.data.Dataset.from_tensor_slices((trX, trY))
 train_data = train_data.repeat().shuffle(1).batch(batch_size).prefetch(1)
 
-#%%
-from net_work_def import ConvNet
+
 
 #%% Loss function  
 
 def RootMeanSquareLoss(x,y):
     loss = tf.keras.losses.MSE(y_true = y, y_pred =x)
-    return tf.reduce_mean(loss) 
-
+    #return tf.reduce_mean(loss) 
+    return loss
 
 #%%  Optimizer Definition
 optimizer = tf.optimizers.SGD(learning_rate)
@@ -141,8 +140,12 @@ def train_nn(neural_net, train_data):
         if step % display_step == 0:
             pred = neural_net(batch_x, is_training=True)
             loss = RootMeanSquareLoss(pred, batch_y)
-            print("step: %i, loss: %f" % (step, loss))
-            
+            print("step: %i, loss: %f" % (step, tf.reduce_mean(loss)))
+      
+
+#%% Bringing Network
+from net_work_def import ConvNet
+
 #%% Training the actual network
 
 neural_net = ConvNet(num_classes)
@@ -151,11 +154,12 @@ train_nn(*inarg)
 
 #%% Random testing
 
-i = 5000 
+i = 900
+
 trX1 = np.reshape(data[i:i+40,:,:,0], [40,50,50])
 trX1 = np.moveaxis(trX1, 0,-1)
 
-gt = pulR[i*2:i*2+80]
+gt = pulR[i*2:i*2+80] 
 plt.plot(gt/gt.max())
 
 trX1 = (trX1 - trX1.min())/(trX1.max() - trX1.min())
