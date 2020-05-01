@@ -114,7 +114,7 @@ train_data = train_data.repeat().shuffle(1).batch(batch_size).prefetch(1)
 #%% Loss function  
 
 def RootMeanSquareLoss(x,y):
-    loss = tf.keras.losses.MSE(y_true = y, y_pred =x)
+    loss = 10*tf.keras.losses.MSE(y_true = y, y_pred =x)
     #return tf.reduce_mean(loss) 
     return loss
 
@@ -123,7 +123,7 @@ optimizer = tf.optimizers.SGD(learning_rate)
 
 def run_optimization(neural_net, x,y):    
     with tf.GradientTape() as g:
-        pred =  neural_net(x, is_training = True)
+        pred =  neural_net(x, training = True)
         loss =  RootMeanSquareLoss(pred, y)
         
     trainable_variables =  neural_net.trainable_variables
@@ -138,7 +138,7 @@ def train_nn(neural_net, train_data):
         run_optimization(neural_net, batch_x, batch_y)
 
         if step % display_step == 0:
-            pred = neural_net(batch_x, is_training=True)
+            pred = neural_net(batch_x, training=True)
             loss = RootMeanSquareLoss(pred, batch_y)
             print("step: %i, loss: %f" % (step, tf.reduce_mean(loss)))
       
@@ -154,7 +154,7 @@ train_nn(*inarg)
 
 #%% Random testing
 
-i = 900
+i = 500
 
 trX1 = np.reshape(data[i:i+40,:,:,0], [40,50,50])
 trX1 = np.moveaxis(trX1, 0,-1)
