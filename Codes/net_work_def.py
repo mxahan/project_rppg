@@ -53,30 +53,30 @@ class ConvNet(Model): # Vitamon network except inception layer
         # Flatten the data to a 1-D vector for the fully connected layer.
         self.flatten = layers.Flatten()
 
-    
+        self.fc1 = layers.Dense(1024, activation=tf.nn.relu)
         
-        self.fc1 = layers.Dense(512, activation=tf.nn.relu)
+        self.fc2 = layers.Dense(512, activation=tf.nn.relu)
         # Apply Dropout (if is_training is False, dropout is not applied).
         self.concat1 = layers.Concatenate()
 
         # Output layer, class prediction.
-        self.out = layers.Dense(num_classes, activation=tf.nn.relu)
+        self.out = layers.Dense(num_classes, tf.nn.relu)
 
     # Set forward pass.
     def call(self, x, training=False):
-        x = tf.reshape(x, [-1, 50, 50, 40])
-        xl = []
-        for i in range(4):
-            x1 = x[:,:,:,i*10:(i+1)*10]
-            x2 = self.conv1(x1, training=training)
-            xl.append(x2)
+ #       x = tf.reshape(x, [-1, 100, 100, 40])
+        # xl = []
+        # for i in range(4):
+        #     x1 = x[:,:,:,i*10:(i+1)*10]
+        #     x2 = self.conv1(x1, training=training)
+        #     xl.append(x2)
         
 
-        # print(x1.shape)
+        # # print(x1.shape)
         
-        x =self.concat1(xl)
+        # x =self.concat1(xl)
         
-
+        x = self.conv1(x, training)
         # print(x.shape)
         
         x = self.conv2(x, training=training)
@@ -87,6 +87,7 @@ class ConvNet(Model): # Vitamon network except inception layer
         x = self.maxpool2(x)
         x = self.flatten(x)
         x = self.fc1(x)
+        x = self.fc2(x)
         x = self.out(x)
 
         return x

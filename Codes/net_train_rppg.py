@@ -31,19 +31,27 @@ from sklearn.model_selection import train_test_split
 
 # load Pathdir
 iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/IR'
+
+#iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_raw'
 dataPath = os.path.join(iD_ir, '*.pgm')
-files = glob.glob(dataPath)
+files = glob.glob(dataPath)  # care about the serialization
 # end load pathdir
+list.sort(files) # serialing the data
 
 # load images  from 1 subject
+#%%
+
 data = []
-im_size = (50,50)
+im_size = (100,100)
 
-
-for f1 in files:
+i = 0
+for f1 in files:  # make sure to stack serially
+    if i%1000==0:
+        print(f1)
     img =  cv2.resize(cv2.imread(f1)[:,:,1], im_size)
     img = img[:,:,np.newaxis]
     data.append(img)
+    i+=1
     
 data =  np.array(data)
     
@@ -62,7 +70,7 @@ pulR = np.array(pulR)
 #%% Prepare dataset for training
 random.seed(1)
 
-rv = [randint(0,5300) for _ in range(10000)]
+rv = [randint(0,5300) for _ in range(5000)]
 randint(0,5350)
 rv =  np.array(rv)
 pulR = np.reshape(pulR, [10703,1])
@@ -72,9 +80,10 @@ trainX = []
 #trainY = np.zeros([200,80])
 trainY = []
 
+frame_cons = 40 # how many frame to consider at a time
 
 for j,i in enumerate(rv):
-    img = np.reshape(data[i:i+40,:,:,0], [40,50,50])
+    img = np.reshape(data[i:i+frame_cons,:,:,0], [frame_cons,*im_size])
     img = np.moveaxis(img, 0,-1)
     trainX.append(img)
     ppg = pulR[2*i: 2*i+80,0]
@@ -87,10 +96,10 @@ trainY = np.array(trainY, dtype = np.float32)
 #%% Some parameter definition
 
 num_classes = 80 # total classes (0-9 digits).
-num_features = 50*50*40 # data features (img shape: 28*28).
+num_features = 100*100*40 # data features (img shape: 28*28).
 
 # Training parameters.
-learning_rate = 0.0001
+learning_rate = 0.001
 training_steps = 40000
 batch_size = 8
 display_step = 50
@@ -114,7 +123,7 @@ train_data = train_data.repeat().shuffle(1).batch(batch_size).prefetch(1)
 #%% Loss function  
 
 def RootMeanSquareLoss(x,y):
-    loss = 10*tf.keras.losses.MSE(y_true = y, y_pred =x)
+    loss = tf.keras.losses.MSE(y_true = y, y_pred =x)
     #return tf.reduce_mean(loss) 
     return loss
 
@@ -124,7 +133,7 @@ optimizer = tf.optimizers.SGD(learning_rate)
 def run_optimization(neural_net, x,y):    
     with tf.GradientTape() as g:
         pred =  neural_net(x, training = True)
-        loss =  RootMeanSquareLoss(pred, y)
+        loss =  RootMeanSquareLoss(y, pred)
         
     trainable_variables =  neural_net.trainable_variables
     
@@ -139,7 +148,7 @@ def train_nn(neural_net, train_data):
 
         if step % display_step == 0:
             pred = neural_net(batch_x, training=True)
-            loss = RootMeanSquareLoss(pred, batch_y)
+            loss = RootMeanSquareLoss(batch_y, pred)
             print("step: %i, loss: %f" % (step, tf.reduce_mean(loss)))
       
 
@@ -154,17 +163,30 @@ train_nn(*inarg)
 
 #%% Random testing
 
-i = 500
+i = 419
 
-trX1 = np.reshape(data[i:i+40,:,:,0], [40,50,50])
-trX1 = np.moveaxis(trX1, 0,-1)
+#trX1 = np.reshape(data[i:i+40,:,:,0], [40,100,100])
+#trX1 = np.moveaxis(trX1, 0,-1)
+#gt = pulR[i*2:i*2+80]
 
-gt = pulR[i*2:i*2+80] 
-plt.plot(gt/gt.max())
+trX1 = teX[i]
+
+trX1 = np.reshape(trX1, [-1, 100,100,40])
+ 
+gt = teY[i]
+
+plt.plot(gt)
 
 trX1 = (trX1 - trX1.min())/(trX1.max() - trX1.min())
 
 predd = neural_net(trX1) 
 plt.plot(predd[0])
 
-#%%
+#%%  Extras
+
+for i in range(40):
+    print(i)
+    plt.imshow(trainX[100,:,:,i])
+    plt.show()
+    
+    
