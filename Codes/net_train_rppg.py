@@ -30,16 +30,19 @@ from sklearn.model_selection import train_test_split
 #%%  Data Load Parts
 
 # load Pathdir
-iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/IR'
+#iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/IR'
 
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_raw'
+iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_demosaiced'
+
+
 dataPath = os.path.join(iD_ir, '*.pgm')
 files = glob.glob(dataPath)  # care about the serialization
 # end load pathdir
 list.sort(files) # serialing the data
 
 # load images  from 1 subject
-#%%
+#%% Load Video
 
 data = []
 im_size = (100,100)
@@ -55,8 +58,7 @@ for f1 in files:  # make sure to stack serially
     
 data =  np.array(data)
     
-#%%
-# load Mat file
+#%% load Mat file
 x = loadmat('../../../Dataset/Merl_Tim/Subject1_still/PulseOX/pulseOx.mat')
 
 pulseoxR = np.squeeze(x['pulseOxRecord'])
@@ -115,8 +117,10 @@ trainY = (trainY-trainY.min())/(trainY.max()-trainY.min())
 
 trX, teX, trY, teY = train_test_split(trainX , trainY, test_size = .1, random_state = 42)
 
+#%% tensorflow dataload
+
 train_data = tf.data.Dataset.from_tensor_slices((trX, trY))
-train_data = train_data.repeat().shuffle(1).batch(batch_size).prefetch(1)
+train_data = train_data.repeat().shuffle(buffer_size=5, seed= 1).batch(batch_size).prefetch(1)
 
 
 
@@ -154,27 +158,38 @@ def train_nn(neural_net, train_data):
 
 #%% Bringing Network
 from net_work_def import ConvNet
+neural_net = ConvNet(num_classes)
 
 #%% Training the actual network
 
-neural_net = ConvNet(num_classes)
+
 inarg = (neural_net, train_data)
 train_nn(*inarg)
+#%% Model weight  save
+neural_net.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/weights/my_checkpoint')
+
+#%% Load weight load
+neural_net.load_weights(
+    '../../../Dataset/Merl_Tim/NNsave/SavedWM/weights/my_checkpoint')
 
 #%% Random testing
 
-i = 419
+i = 99
 
 #trX1 = np.reshape(data[i:i+40,:,:,0], [40,100,100])
 #trX1 = np.moveaxis(trX1, 0,-1)
 #gt = pulR[i*2:i*2+80]
 
+# trX1 = teX[i]
+
+# gt = trY[i]
+
 trX1 = teX[i]
 
-trX1 = np.reshape(trX1, [-1, 100,100,40])
- 
 gt = teY[i]
 
+
+trX1 = np.reshape(trX1, [-1, 100,100,40])
 plt.plot(gt)
 
 trX1 = (trX1 - trX1.min())/(trX1.max() - trX1.min())

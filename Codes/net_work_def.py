@@ -57,7 +57,7 @@ class ConvNet(Model): # Vitamon network except inception layer
         
         self.fc2 = layers.Dense(512, activation=tf.nn.relu)
         # Apply Dropout (if is_training is False, dropout is not applied).
-        self.concat1 = layers.Concatenate()
+        # self.concat1 = layers.Concatenate()
 
         # Output layer, class prediction.
         self.out = layers.Dense(num_classes, tf.nn.relu)
