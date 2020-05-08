@@ -174,19 +174,19 @@ neural_net.load_weights(
 
 #%% Random testing
 
-i = 9
+i = 94
 
 #trX1 = np.reshape(data[i:i+40,:,:,0], [40,100,100])
 #trX1 = np.moveaxis(trX1, 0,-1)
 #gt = pulR[i*2:i*2+80]
 
-trX1 = trX[i]
+# trX1 = trX[i]
 
-gt = trY[i]
+# gt = trY[i]
 
-# trX1 = teX[i]
+trX1 = teX[i]
 
-# gt = teY[i]
+gt = teY[i]
 
 
 trX1 = np.reshape(trX1, [-1, 100,100,40])
