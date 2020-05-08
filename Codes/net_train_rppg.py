@@ -101,10 +101,10 @@ num_classes = 80 # total classes (0-9 digits).
 num_features = 100*100*40 # data features (img shape: 28*28).
 
 # Training parameters.
-learning_rate = 0.001
-training_steps = 40000
+learning_rate = 0.001 # start with 0.001
+training_steps = 30000
 batch_size = 8
-display_step = 50
+display_step = 100
 
 
 # Network parameters.
@@ -160,11 +160,11 @@ def train_nn(neural_net, train_data):
 from net_work_def import ConvNet
 neural_net = ConvNet(num_classes)
 
+
 #%% Training the actual network
-
-
 inarg = (neural_net, train_data)
 train_nn(*inarg)
+
 #%% Model weight  save
 neural_net.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/weights/my_checkpoint')
 
@@ -174,19 +174,19 @@ neural_net.load_weights(
 
 #%% Random testing
 
-i = 99
+i = 9
 
 #trX1 = np.reshape(data[i:i+40,:,:,0], [40,100,100])
 #trX1 = np.moveaxis(trX1, 0,-1)
 #gt = pulR[i*2:i*2+80]
 
+trX1 = trX[i]
+
+gt = trY[i]
+
 # trX1 = teX[i]
 
-# gt = trY[i]
-
-trX1 = teX[i]
-
-gt = teY[i]
+# gt = teY[i]
 
 
 trX1 = np.reshape(trX1, [-1, 100,100,40])
