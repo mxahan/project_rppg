@@ -24,7 +24,7 @@ class ConvBNRelu(keras.Model):
         ])
         
         
-    def call(self, x, training=None):
+    def call(self, x, training=False):
         
         x = self.model(x, training=training)
         
@@ -76,7 +76,7 @@ class ConvNet(Model): # Vitamon network except inception layer
         
         # x =self.concat1(xl)
         
-        x = self.conv1(x, training)
+        x = self.conv1(x, training=training)
         # print(x.shape)
         
         x = self.conv2(x, training=training)
