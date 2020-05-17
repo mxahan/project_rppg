@@ -37,13 +37,13 @@ from sklearn.model_selection import train_test_split
 
 path_dir = '../../../Dataset/Merl_Tim'
 
-subjects = ['/Subject1_still', '/Subject2_still', '/Subject3_still']
+subjects = ['/Subject1_still', '/Subject2_still', '/Subject3_still', '/Subject4_still']
 
 im_mode = ['/IR', '/RGB_raw', '/RGB_demosaiced']
 
+path_dir = path_dir + subjects[1]
 
-
-iD_ir = path_dir + subjects[2]+im_mode[1]
+iD_ir = +im_mode[0]
 
 dataPath = os.path.join(iD_ir, '*.pgm')
 
@@ -69,7 +69,7 @@ for f1 in files:  # make sure to stack serially
 data =  np.array(data)
     
 #%% load Mat file
-x = loadmat(path_dir + subjects[2]+'/PulseOX/pulseOx.mat')
+x = loadmat(path_dir +'/PulseOX/pulseOx.mat')
 
 pulseoxR = np.squeeze(x['pulseOxRecord'])
 
@@ -80,14 +80,18 @@ for i in range(pulseoxR.shape[0]):
 pulR = np.array(pulR)
     
 #%% Prepare dataset for training
-# For subject one go till 5300
+# For subject 1,4 go till 5300
 # For suject 2 go till 6230
 # For subject 3 go till 7100
-random.seed(1)
 
-rv = [randint(0,7100) for _ in range(5000)]
+random.seed(1)
+#rv = np.arange(1,5000, 1)
+#np.random.shuffle(rv)
+
+
+rv = [randint(0, 5300) for _ in range(5000)] ## random removal 
 rv =  np.array(rv)
-pulR = np.reshape(pulR, [pulR.shape[0],1])
+pulR = np.reshape(pulR, [pulR.shape[0],1]) # take 45 frames together
 #      #%%
 
 trainX = []
@@ -113,9 +117,9 @@ num_classes = 80 # total classes (0-9 digits).
 num_features = 100*100*40 # data features (img shape: 28*28).
 
 # Training parameters.
-learning_rate = 0.001 # start with 0.001
-training_steps = 5000
-batch_size = 8
+learning_rate = 0.0005 # start with 0.001
+training_steps = 10000
+batch_size = 16
 display_step = 100
 
 
@@ -142,7 +146,7 @@ train_data = train_data.repeat().shuffle(buffer_size=500, seed= 8).batch(batch_s
 
 def RootMeanSquareLoss(x,y):
     loss = tf.keras.losses.MSE(y_true = y, y_pred =x)
-    #return tf.reduce_mean(loss) 
+    #return tf.reduce_mean(loss)  # some other shape similarity
     return loss
 
 #%%  Optimizer Definition
@@ -158,20 +162,32 @@ def run_optimization(neural_net, x,y):
     gradients =  g.gradient(loss, trainable_variables)
     
     optimizer.apply_gradients(zip(gradients, trainable_variables))
-    
+
+train_loss =[]
+val_loss = []
+
 def train_nn(neural_net, train_data):
         
     for step, (batch_x, batch_y) in enumerate(train_data.take(training_steps), 1):     
         run_optimization(neural_net, batch_x, batch_y)
 
-        if step % display_step == 0:
+        if step % (display_step*2) == 0:
             pred = neural_net(batch_x, training=True)
             loss = RootMeanSquareLoss(batch_y, pred)
             print("step: %i, loss: %f" % (step, tf.reduce_mean(loss)))
-      
-
+            train_loss.append(tf.reduce_mean(loss))
+            Val_loss(neural_net, teX[0:16], teY[0:16])
+            
+            
+def Val_loss (neural_net, testX, testY):
+    pred = neural_net(testX, training = False)
+    loss = RootMeanSquareLoss(testY, pred)
+    val_loss.append(tf.reduce_mean(loss))
+    
+    
 #%% Bringing Network
 from net_work_def import ConvNet, ConvNet1
+# power of CNN
 #%% load network
 neural_net = ConvNet(num_classes)
 # Basenet = ConvNet1(num_classes)
@@ -181,42 +197,66 @@ with tf.device('gpu:0/'):
     train_nn(*inarg)
 
 #%% Model weight  save
-#neural_net.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/my_checkpoint')
+# neural_net.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub1IR')
+# my_checkpoint, sub3IR, sub1IR
 
 #%% Load weight load
 # neural_net.load_weights(
-    # '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/my_checkpoint')
+#       '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub1IR')
 
 #%% Random testing
-
-i = 93
-
-# trX1 = np.reshape(data[i:i+40,:,:,:], [40,100,100])/255
-# trX1 = np.moveaxis(trX1, 0,-1) # very important line in axis changeing 
-# gt = pulR[i*2:i*2+80]
-# gt = (gt-gt.min())/(gt.max()-gt.min())
-
-trX1 = trX[i]
-
-gt = trY[i]
-
-# trX1 = teX[i]
-
-# gt = teY[i]
+# modification in network 
+# performance measurement. 
+# peak penalize (except mse)
+i = 811
 
 
-trX1 = np.reshape(trX1, [-1, 100,100,40])
-plt.plot(gt)
 
-trX1 = (trX1 - trX1.min())/(trX1.max() - trX1.min())
 
-predd = neural_net(trX1) 
-plt.plot(predd[0])
+
+fig=plt.figure(figsize=(8, 8))
+columns = 4
+rows = 4
+for j in range(1, columns*rows +1):
+    
+    i =randint(1,5000)
+    trX1 = np.reshape(data[i:i+40,:,:,:], [40,100,100])/255
+    trX1 = np.moveaxis(trX1, 0,-1) # very important line in axis changeing 
+    gt = pulR[i*2:i*2+80]
+    gt = (gt-gt.min())/(gt.max()-gt.min())
+    
+    # trX1 = teX[i]
+    
+    # gt = teY[i]
+    
+    # trX1 = teX[i]
+    
+    # gt = teY[i]
+    
+    fig.add_subplot(rows, columns, j)
+    trX1 = np.reshape(trX1, [-1, 100,100,40])
+    plt.plot(gt)
+    
+    trX1 = (trX1 - trX1.min())/(trX1.max() - trX1.min())
+    
+    predd = neural_net(trX1) 
+    plt.plot(predd[0])
+    plt.legend(["Predicted", 'Ground truth'])
+    plt.xlabel('time')
+    plt.ylabel('magnitude')
+plt.show()
 
 #%% Seeing inside the network
 in1 = neural_net.layers[0](trX1).numpy() # plt.plot(in1[0,:,:,1])
 in2 = neural_net.layers[1](in1).numpy() # plt.plot(in2[0,:,:,1])  
 in3 = neural_net.layers[2](in2).numpy()
+
+in4 = neural_net.layers[3](in3).numpy()
+in5 = neural_net.layers[4](in4).numpy()
+in6 = neural_net.layers[5](in5).numpy()
+in7 = neural_net.layers[6](in6).numpy()
+
+# in3 = neural_net.layers[2](in2).numpy()
 
 # ##we can also select the model inside the inside layer
 
@@ -230,6 +270,7 @@ in3 = neural_net.layers[2](in2).numpy()
 
 # ways to get the weights and biases. the layers should be in our mind in the firsthand 
 #neural_net.layers[0].layers[0].layers[0].weights
+# Keep track what you did in call and what you have in model layer definition
 
 #%%  Extras
 
@@ -240,4 +281,33 @@ for i in range(40):
     
     
 #%% Get_weights and Set_weights
-neural_net.layers[7].set_weights(Basenet.layers[7].get_weights())
+# neural_net.layers[7].set_weights(Basenet.layers[7].get_weights())
+#weightss = np.array(neural_net.layers[0].layers[0].layers[0].weights)
+
+#%% Plotting learning curves
+
+tr_l = np.array(train_loss)
+val_l = np.array(val_loss)
+
+plt.plot(tr_l, 'r', val_l, 'g')
+
+plt.xlabel("training step")
+
+plt.ylabel("Errors in MSE")
+
+plt.title("Learning curves for IR (person 3)")
+
+lst = ["Training", 'Validation']
+
+plt.legend(lst)
+
+#%% Better visualization
+
+fig=plt.figure(figsize=(8, 8))
+columns = 4
+rows = 4
+for i in range(1, columns*rows +1):
+    img = in6[0, :,:, 47+i]
+    fig.add_subplot(rows, columns, i)
+    plt.imshow(img)
+plt.show()

@@ -25,11 +25,49 @@ class ConvBNRelu(keras.Model):
         ])
         
         
-    def call(self, x, training=False):
+    def call(self, x, training=None):
         
         x = self.model(x, training=training)
         
         return x 
+    
+# inception module
+
+class InceptMod(keras.Model):
+    def __init__(self, ch, strides = 1):
+        super(InceptMod, self).__init__()
+        
+        self.ch = ch
+        self.strides = strides
+        
+        self.conv1 = ConvBNRelu(ch, strides=strides)
+        
+        self.conv2 = ConvBNRelu(ch, strides=strides)
+        
+        self.conv3_1 = ConvBNRelu(ch, strides=strides)
+        
+        self.conv3_2 = ConvBNRelu(ch, strides=strides)
+        
+        
+        self.pool = keras.layers.MaxPooling2D(3, strides=1, padding='same')
+        self.pool_conv = ConvBNRelu(ch, strides=strides)
+        
+        
+    def call(self, x, training=None):
+        x1 = self.conv1(x, training=training)
+
+        x2 = self.conv2(x, training=training)
+                
+        x3_1 = self.conv3_1(x, training=training)
+        x3_2 = self.conv3_2(x3_1, training=training)
+                
+        x4 = self.pool(x)
+        x4 = self.pool_conv(x4, training=training)
+        
+        # concat along axis=channel
+        x = tf.concat([x1, x2, x3_2, x4], axis=3)
+        
+        return x
     
 ## Initial Network works fine but 41M  parameters the problem with dense layers
 class ConvNet1(Model): # Vitamon network except inception layer
@@ -100,50 +138,32 @@ class ConvNet(Model): # Vitamon network except inception layer
     def __init__(self, num_classes):
         super(ConvNet, self).__init__()
         # Convolution Layer with 32 filters and a kernel size of 5.
-        self.conv1 = ConvBNRelu(16)
+        self.conv1 = ConvBNRelu(32)
         
-        self.concat1 = layers.Concatenate()
+        # self.concat1 = layers.Concatenate()
 
         # Convolution Layer with 64 filters and a kernel size of 3.
         self.conv2 = ConvBNRelu(64)
         # Max Pooling (down-sampling) with kernel size of 2 and strides of 2. 
         self.maxpool1 = layers.MaxPool2D(2, strides=2)
         
-        self.conv3 = ConvBNRelu(32, kernel_size=3)
+        self.conv3 = ConvBNRelu(64, kernel_size=3)
         # Max Pooling (down-sampling) with kernel size of 2 and strides of 2. 
 
         # Convolution Layer with 64 filters and a kernel size of 3.
-        self.conv4 = ConvBNRelu(64, kernel_size=3)
+        self.conv4 = ConvBNRelu(96, kernel_size=3)
         # Max Pooling (down-sampling) with kernel size of 2 and strides of 2. 
         self.maxpool2 = layers.MaxPool2D(2, strides=2)
         
+        self.incept1 = InceptMod(ch = 16, strides = 1)
         
-        self.conv5 = ConvBNRelu(64, kernel_size=3)
-        # Max Pooling (down-sampling) with kernel size of 2 and strides of 2. 
-
-        # Convolution Layer with 64 filters and a kernel size of 3.
-        self.conv6 = ConvBNRelu(32, kernel_size=3)
-        # Max Pooling (down-sampling) with kernel size of 2 and strides of 2. 
-        self.maxpool3 = layers.MaxPool2D(2, strides=2)
-        
-        self.conv7 = ConvBNRelu(64, kernel_size=3)
-        # Max Pooling (down-sampling) with kernel size of 2 and strides of 2. 
-
-        # Convolution Layer with 64 filters and a kernel size of 3.
-        self.conv8 = ConvBNRelu(32, kernel_size=3)
-        # Max Pooling (down-sampling) with kernel size of 2 and strides of 2. 
-        self.maxpool4 = layers.MaxPool2D(2, strides=2)
-        
-        # can use sequential instead
-        
-        # self.blocks = keras.models.Sequential(name='dynamic-blocks')   
-        # self.blocks.add(ConvBNRelu(32, kernel_size = 3)) ........
+        self.avgpool = layers.AveragePooling2D(2, strides= 2)
         
         self.flatten = layers.Flatten()
 
         self.fc1 = layers.Dense(512, activation=tf.nn.relu)
         
-        self.fc2 = layers.Dense(256, activation=tf.nn.relu)
+        self.fc2 = layers.Dense(512, activation=tf.nn.relu)
         # Apply Dropout (if is_training is False, dropout is not applied).
 
         # Output layer, class prediction.
@@ -152,34 +172,29 @@ class ConvNet(Model): # Vitamon network except inception layer
     # Set forward pass.
     def call(self, x, training=False):
  #       x = tf.reshape(x, [-1, 100, 100, 40])
-        xl = []
-        for i in range(4):
-            x1 = x[:,:,:,i*10:(i+1)*10]
-            x2 = self.conv1(x1, training=training)
-            xl.append(x2)
-        # # print(x1.shape)
+        # xl = []
+        # for i in range(4):
+        #     x1 = x[:,:,:,i*10:(i+1)*10]
+        #     x2 = self.conv1(x1, training=training)
+        #     xl.append(x2)
+        # # # print(x1.shape)
         
-        x =self.concat1(xl)
+        # x =self.concat1(xl)
         
-        # x = self.conv1(x, training=training)
+        x = self.conv1(x, training=training)
         # print(x.shape)
-        
         x = self.conv2(x, training=training)
         x = self.maxpool1(x)
+        
         x = self.conv3(x, training=training)
         x = self.conv4(x, training=training)
         
         x = self.maxpool2(x)
-        x = self.conv5(x, training=training)
-        x = self.conv6(x, training=training)
         
-        x = self.maxpool3(x)
-       
-        x = self.conv7(x, training=training)
-        x = self.conv8(x, training=training)
+        x = self.incept1(x, training = training)
         
-        x = self.maxpool4(x)
-        
+        x = self.avgpool(x)
+        # print(x.shape)
         # print(x.shape)
        
         x = self.flatten(x)
