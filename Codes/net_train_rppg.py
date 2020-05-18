@@ -41,9 +41,9 @@ subjects = ['/Subject1_still', '/Subject2_still', '/Subject3_still', '/Subject4_
 
 im_mode = ['/IR', '/RGB_raw', '/RGB_demosaiced']
 
-path_dir = path_dir + subjects[1]
+path_dir = path_dir + subjects[0]
 
-iD_ir = +im_mode[0]
+iD_ir = path_dir +im_mode[0]
 
 dataPath = os.path.join(iD_ir, '*.pgm')
 
@@ -69,6 +69,7 @@ for f1 in files:  # make sure to stack serially
 data =  np.array(data)
     
 #%% load Mat file
+
 x = loadmat(path_dir +'/PulseOX/pulseOx.mat')
 
 pulseoxR = np.squeeze(x['pulseOxRecord'])
@@ -85,31 +86,33 @@ pulR = np.array(pulR)
 # For subject 3 go till 7100
 
 random.seed(1)
-#rv = np.arange(1,5000, 1)
-#np.random.shuffle(rv)
+rv = np.arange(0,4000, 1)
+np.random.shuffle(rv)
 
 
-rv = [randint(0, 5300) for _ in range(5000)] ## random removal 
+# rv = [randint(0, 5300) for _ in range(5000)] ## random removal 
 rv =  np.array(rv)
 pulR = np.reshape(pulR, [pulR.shape[0],1]) # take 45 frames together
 #      #%%
 
-trainX = []
-#trainY = np.zeros([200,80])
-trainY = []
+if 'trainX' in locals():
+    print("already exists")
+else:
+    trainX = []
+    trainY = []
+
+
 
 frame_cons = 40 # how many frame to consider at a time
 
 for j,i in enumerate(rv):
-    img = np.reshape(data[i:i+frame_cons,:,:,0], [frame_cons,*im_size])
+    img = np.reshape(data[i:i+frame_cons,:,:,0], [frame_cons, *im_size])
     img = np.moveaxis(img, 0,-1)
     trainX.append(img)
     ppg = pulR[2*i: 2*i+80,0]
     trainY.append(ppg)
 
 
-trainX = np.array(trainX, dtype = np.float32)
-trainY = np.array(trainY, dtype = np.float32)
 
 #%% Some parameter definition
 
@@ -117,21 +120,29 @@ num_classes = 80 # total classes (0-9 digits).
 num_features = 100*100*40 # data features (img shape: 28*28).
 
 # Training parameters.
-learning_rate = 0.0005 # start with 0.001
-training_steps = 10000
+learning_rate = 0.001 # start with 0.001
+training_steps = 60000
 batch_size = 16
 display_step = 100
 
 
 # Network parameters.
 
+# Multitask for each subjects
+# varies the last layer (different last layers) keep the backbone network same - Great idea
+
 
 #%%    Normalize and split
+trainX = np.array(trainX, dtype = np.float32)
+trainY = np.array(trainY, dtype = np.float32)
+
 
 trainY = trainY - trainY.min(axis = 1)[:, np.newaxis]
 trainY = trainY/(trainY.max(axis = 1)[:, np.newaxis]+ 10**-5)
 
-trainX = (trainX-trainX.min())/(trainX.max()-trainX.min())
+trainX = (trainX-trainX.min())
+
+trainX = trainX/ trainX.max()
 #trainY = (trainY-trainY.min())/(trainY.max()-trainY.min()) # bad idea as global minima and outlines
 
 trX, teX, trY, teY = train_test_split(trainX , trainY, test_size = .1, random_state = 42)
@@ -219,18 +230,16 @@ columns = 4
 rows = 4
 for j in range(1, columns*rows +1):
     
-    i =randint(1,5000)
-    trX1 = np.reshape(data[i:i+40,:,:,:], [40,100,100])/255
+    i =randint( 4000, 5300)
+    print(i)
+    trX1 = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     trX1 = np.moveaxis(trX1, 0,-1) # very important line in axis changeing 
     gt = pulR[i*2:i*2+80]
     gt = (gt-gt.min())/(gt.max()-gt.min())
     
-    # trX1 = teX[i]
-    
-    # gt = teY[i]
-    
-    # trX1 = teX[i]
-    
+    # trX1 = teX[i]    
+    # gt = teY[i]    
+    # trX1 = teX[i]    
     # gt = teY[i]
     
     fig.add_subplot(rows, columns, j)
@@ -276,7 +285,7 @@ in7 = neural_net.layers[6](in6).numpy()
 
 for i in range(40):
     print(i)
-    plt.imshow(trainX[100,:,:,i])
+    plt.imshow(trainX[8000,:,:,i])
     plt.show()
     
     
@@ -307,7 +316,15 @@ fig=plt.figure(figsize=(8, 8))
 columns = 4
 rows = 4
 for i in range(1, columns*rows +1):
-    img = in6[0, :,:, 47+i]
+    img = in6[0, :,:, 30+i]
     fig.add_subplot(rows, columns, i)
     plt.imshow(img)
 plt.show()
+
+
+#%% PPG visulization
+
+plt.plot(pulR[500:4000])
+plt.xlabel('time')
+plt.ylabel('PPG magnitude')
+plt.title("PPG magnitude changes")
