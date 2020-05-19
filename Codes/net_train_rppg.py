@@ -38,11 +38,11 @@ from sklearn.model_selection import train_test_split
 path_dir = '../../../Dataset/Merl_Tim'
 
 subjects = ['/Subject1_still', '/Subject2_still', '/Subject3_still', '/Subject4_still',
-            '/Subject5_still', '/Subject8_still', '/Subject7_still']
+            '/Subject5_still', '/Subject6_still', '/Subject7_still', '/Subject8_still']
 
 im_mode = ['/IR', '/RGB_raw', '/RGB_demosaiced']
 
-path_dir = path_dir + subjects[6]
+path_dir = path_dir + subjects[5]
 
 iD_ir = path_dir +im_mode[0]
 
@@ -123,7 +123,7 @@ num_features = 100*100*40 # data features (img shape: 28*28).
 # Training parameters.
 learning_rate = 0.0005 # start with 0.001
 training_steps = 10000
-batch_size = 8
+batch_size = 16
 display_step = 100
 
 
@@ -321,7 +321,7 @@ fig=plt.figure(figsize=(8, 8))
 columns = 4
 rows = 4
 for i in range(1, columns*rows +1):
-    img = in5[0, :,:, 30+i]
+    img = in6[0, :,:, 30+i]
     fig.add_subplot(rows, columns, i)
     plt.imshow(img)
 plt.show()
