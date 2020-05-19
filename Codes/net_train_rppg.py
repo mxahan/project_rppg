@@ -37,11 +37,12 @@ from sklearn.model_selection import train_test_split
 
 path_dir = '../../../Dataset/Merl_Tim'
 
-subjects = ['/Subject1_still', '/Subject2_still', '/Subject3_still', '/Subject4_still']
+subjects = ['/Subject1_still', '/Subject2_still', '/Subject3_still', '/Subject4_still',
+            '/Subject5_still', '/Subject8_still', '/Subject7_still']
 
 im_mode = ['/IR', '/RGB_raw', '/RGB_demosaiced']
 
-path_dir = path_dir + subjects[0]
+path_dir = path_dir + subjects[6]
 
 iD_ir = path_dir +im_mode[0]
 
@@ -76,7 +77,7 @@ pulseoxR = np.squeeze(x['pulseOxRecord'])
 
 pulR = []
 for i in range(pulseoxR.shape[0]):
-    pulR.append(pulseoxR[i][0][0])
+    pulR.append(pulseoxR[i][0][0])  # check the inside shape sub 5 cause error
     
 pulR = np.array(pulR)
     
@@ -86,7 +87,7 @@ pulR = np.array(pulR)
 # For subject 3 go till 7100
 
 random.seed(1)
-rv = np.arange(0,4000, 1)
+rv = np.arange(0,5000, 1)
 np.random.shuffle(rv)
 
 
@@ -120,17 +121,18 @@ num_classes = 80 # total classes (0-9 digits).
 num_features = 100*100*40 # data features (img shape: 28*28).
 
 # Training parameters.
-learning_rate = 0.001 # start with 0.001
-training_steps = 60000
-batch_size = 16
+learning_rate = 0.0005 # start with 0.001
+training_steps = 10000
+batch_size = 8
 display_step = 100
 
 
 # Network parameters.
 
 # Multitask for each subjects
-# varies the last layer (different last layers) keep the backbone network same - Great idea
-
+# varies the last layer (different last layers) 
+# keep the backbone network same - Great idea
+# create target from video itself. 
 
 #%%    Normalize and split
 trainX = np.array(trainX, dtype = np.float32)
@@ -143,14 +145,17 @@ trainY = trainY/(trainY.max(axis = 1)[:, np.newaxis]+ 10**-5)
 trainX = (trainX-trainX.min())
 
 trainX = trainX/ trainX.max()
-#trainY = (trainY-trainY.min())/(trainY.max()-trainY.min()) # bad idea as global minima and outlines
+#trainY = (trainY-trainY.min())/(trainY.max()-trainY.min())
+ # bad idea as global minima and outlines
 
-trX, teX, trY, teY = train_test_split(trainX , trainY, test_size = .1, random_state = 42)
+trX, teX, trY, teY = train_test_split(trainX , trainY, 
+                                      test_size = .1, random_state = 42)
 
 #%% tensorflow dataload
 
 train_data = tf.data.Dataset.from_tensor_slices((trX, trY))
-train_data = train_data.repeat().shuffle(buffer_size=500, seed= 8).batch(batch_size).prefetch(1)
+train_data = train_data.repeat().shuffle(buffer_size=500,
+                                         seed= 8).batch(batch_size).prefetch(1)
 
 
 #%% Loss function  
@@ -230,7 +235,7 @@ columns = 4
 rows = 4
 for j in range(1, columns*rows +1):
     
-    i =randint( 4000, 5300)
+    i =randint( 5000, 5200)
     print(i)
     trX1 = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     trX1 = np.moveaxis(trX1, 0,-1) # very important line in axis changeing 
@@ -250,7 +255,7 @@ for j in range(1, columns*rows +1):
     
     predd = neural_net(trX1) 
     plt.plot(predd[0])
-    plt.legend(["Predicted", 'Ground truth'])
+    plt.legend(["Ground Truth", "Predicted"])
     plt.xlabel('time')
     plt.ylabel('magnitude')
 plt.show()
@@ -316,7 +321,7 @@ fig=plt.figure(figsize=(8, 8))
 columns = 4
 rows = 4
 for i in range(1, columns*rows +1):
-    img = in6[0, :,:, 30+i]
+    img = in5[0, :,:, 30+i]
     fig.add_subplot(rows, columns, i)
     plt.imshow(img)
 plt.show()
