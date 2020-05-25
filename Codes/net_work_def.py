@@ -157,7 +157,11 @@ class ConvNet(Model): # Vitamon network except inception layer
         
         self.incept1 = InceptMod(ch = 16, strides = 1)
         
-        self.avgpool = layers.AveragePooling2D(2, strides= 2)
+        self.avgpool1 = layers.AveragePooling2D(2, strides= 2)
+        
+        self.incept2 = InceptMod(ch = 16, strides = 1)
+        
+        self.avgpool2 = layers.AveragePooling2D(2, strides= 2)
         
         self.flatten = layers.Flatten()
 
@@ -167,17 +171,11 @@ class ConvNet(Model): # Vitamon network except inception layer
         # Apply Dropout (if is_training is False, dropout is not applied).
 
         # Output layer, class prediction.
-        self.out = layers.Dense(num_classes, tf.nn.relu)
+        self.out = layers.Dense(num_classes)
 
     # Set forward pass.
     def call(self, x, training=False):
  #       x = tf.reshape(x, [-1, 100, 100, 40])
-        # xl = []
-        # for i in range(4):
-        #     x1 = x[:,:,:,i*10:(i+1)*10]
-        #     x2 = self.conv1(x1, training=training)
-        #     xl.append(x2)
-        # # # print(x1.shape)
         
         # x =self.concat1(xl)
         
@@ -193,13 +191,116 @@ class ConvNet(Model): # Vitamon network except inception layer
         
         x = self.incept1(x, training = training)
         
-        x = self.avgpool(x)
+        x = self.avgpool1(x)
+   
+        x = self.incept2(x, training = training)
+        
+        x = self.avgpool2(x)
         # print(x.shape)
-        # print(x.shape)
-       
+        
         x = self.flatten(x)
         x = self.fc1(x)
         x = self.fc2(x)
         x = self.out(x)
+        x = tf.nn.tanh(x)
 
         return x
+
+
+
+# Network Option  2 
+
+class MtlNetwork(Model): # Vitamon network except inception layer
+    # Set layers.
+    def __init__(self, num_classes):
+        super(MtlNetwork, self).__init__()
+        # Convolution Layer with 32 filters and a kernel size of 5.
+        self.conv1 = ConvBNRelu(32)
+        
+        # self.concat1 = layers.Concatenate()
+
+        # Convolution Layer with 64 filters and a kernel size of 3.
+        self.conv2 = ConvBNRelu(64)
+        # Max Pooling (down-sampling) with kernel size of 2 and strides of 2. 
+        self.maxpool1 = layers.MaxPool2D(2, strides=2)
+        
+        self.conv3 = ConvBNRelu(64, kernel_size=3)
+        # Max Pooling (down-sampling) with kernel size of 2 and strides of 2. 
+
+        # Convolution Layer with 64 filters and a kernel size of 3.
+        self.conv4 = ConvBNRelu(96, kernel_size=3)
+        # Max Pooling (down-sampling) with kernel size of 2 and strides of 2. 
+        self.maxpool2 = layers.MaxPool2D(2, strides=2)
+        
+        self.incept1 = InceptMod(ch = 16, strides = 1)
+        
+        self.avgpool1 = layers.AveragePooling2D(2, strides= 2)
+        
+        self.incept2 = InceptMod(ch = 16, strides = 1)
+        
+        self.avgpool2 = layers.AveragePooling2D(2, strides= 2)
+        
+        self.flatten = layers.Flatten()
+
+        self.fc1_1 = layers.Dense(512, activation=tf.nn.relu)
+        
+        self.fc1_2 = layers.Dense(512, activation=tf.nn.relu)
+        # Apply Dropout (if is_training is False, dropout is not applied).
+
+        # Output layer, class prediction.
+        self.out1 = layers.Dense(num_classes)
+        
+        
+        
+        self.fc2_1 = layers.Dense(512, activation=tf.nn.relu)
+        
+        self.fc2_2 = layers.Dense(512, activation=tf.nn.relu)
+        # Apply Dropout (if is_training is False, dropout is not applied).
+
+        # Output layer, class prediction.
+        self.out2 = layers.Dense(num_classes)
+
+    # Set forward pass.
+    def call(self, x, training=False):
+ #       x = tf.reshape(x, [-1, 100, 100, 40])
+        
+        # x =self.concat1(xl)
+        
+        x = self.conv1(x, training=training)
+        # print(x.shape)
+        x = self.conv2(x, training=training)
+        x = self.maxpool1(x)
+        
+        x = self.conv3(x, training=training)
+        x = self.conv4(x, training=training)
+        
+        x = self.maxpool2(x)
+        
+        x = self.incept1(x, training = training)
+        
+        x = self.avgpool1(x)
+   
+        x = self.incept2(x, training = training)
+        
+        x = self.avgpool2(x)
+        # print(x.shape)
+        
+        x = self.flatten(x)
+        
+        
+        x1 = self.fc1_1(x)
+        x1 = self.fc2_1(x1)
+        x1 = self.out1(x1)
+        x1 = tf.nn.tanh(x1)
+        
+        
+        x2 = self.fc1_2(x)
+        x2 = self.fc2_2(x2)
+        x2 = self.out2(x2)
+        x2 = tf.nn.tanh(x2)
+        
+        x3 =  layers.concatenate([x1, x2])
+        
+        print(x3.shape)
+
+        return x3

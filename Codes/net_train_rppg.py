@@ -42,9 +42,9 @@ subjects = ['/Subject1_still', '/Subject2_still', '/Subject3_still', '/Subject4_
 
 im_mode = ['/IR', '/RGB_raw', '/RGB_demosaiced']
 
-path_dir = path_dir + subjects[5]
+path_dir = path_dir + subjects[4]
 
-iD_ir = path_dir +im_mode[0]
+iD_ir = path_dir +im_mode[1]
 
 dataPath = os.path.join(iD_ir, '*.pgm')
 
@@ -87,7 +87,7 @@ pulR = np.array(pulR)
 # For subject 3 go till 7100
 
 random.seed(1)
-rv = np.arange(0,5000, 1)
+rv = np.arange(0,5000, 2)
 np.random.shuffle(rv)
 
 
@@ -120,9 +120,9 @@ for j,i in enumerate(rv):
 num_classes = 80 # total classes (0-9 digits).
 num_features = 100*100*40 # data features (img shape: 28*28).
 
-# Training parameters.
-learning_rate = 0.0005 # start with 0.001
-training_steps = 10000
+# Training parameters. Sunday, May 24, 2020 
+learning_rate = 0.005 # start with 0.001
+training_steps = 80000
 batch_size = 16
 display_step = 100
 
@@ -140,7 +140,7 @@ trainY = np.array(trainY, dtype = np.float32)
 
 
 trainY = trainY - trainY.min(axis = 1)[:, np.newaxis]
-trainY = trainY/(trainY.max(axis = 1)[:, np.newaxis]+ 10**-5)
+trainY = (trainY/(trainY.max(axis = 1)[:, np.newaxis]+ 10**-5))*2-1
 
 trainX = (trainX-trainX.min())
 
@@ -159,11 +159,18 @@ train_data = train_data.repeat().shuffle(buffer_size=500,
 
 
 #%% Loss function  
+# import pdb
 
 def RootMeanSquareLoss(x,y):
-    loss = tf.keras.losses.MSE(y_true = y, y_pred =x)
+    loss = tf.keras.losses.MSE(y_true = y, y_pred =x)  # initial one
     #return tf.reduce_mean(loss)  # some other shape similarity
-    return loss
+    # pdb.set_trace()   
+    loss2 = tf.reduce_mean((tf.math.abs(tf.math.sign(y))-tf.math.sign(tf.math.multiply(x,y))),axis = -1)
+    # print(loss2.shape)
+    
+    # print(tf.reduce_mean(loss), tf.reduce_mean(loss2))
+    return loss + 0.25*loss2
+
 
 #%%  Optimizer Definition
 optimizer = tf.optimizers.SGD(learning_rate)
@@ -179,8 +186,14 @@ def run_optimization(neural_net, x,y):
     
     optimizer.apply_gradients(zip(gradients, trainable_variables))
 
-train_loss =[]
-val_loss = []
+
+
+if 'train_loss' in locals():
+    print("already exists")
+else:
+    train_loss =[]
+    val_loss = []
+
 
 def train_nn(neural_net, train_data):
         
@@ -213,8 +226,8 @@ with tf.device('gpu:0/'):
     train_nn(*inarg)
 
 #%% Model weight  save
-# neural_net.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub1IR')
-# my_checkpoint, sub3IR, sub1IR
+# neural_net.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub4RGB_raw')
+#my_checkpoint, sub3IR, sub1IR, sub4RGB_raw'
 
 #%% Load weight load
 # neural_net.load_weights(
@@ -235,7 +248,8 @@ columns = 4
 rows = 4
 for j in range(1, columns*rows +1):
     
-    i =randint( 5000, 5200)
+    i =randint( 5040,5100)
+    i= 5200+j+j
     print(i)
     trX1 = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     trX1 = np.moveaxis(trX1, 0,-1) # very important line in axis changeing 
@@ -249,7 +263,7 @@ for j in range(1, columns*rows +1):
     
     fig.add_subplot(rows, columns, j)
     trX1 = np.reshape(trX1, [-1, 100,100,40])
-    plt.plot(gt)
+    plt.plot(gt*2-1)
     
     trX1 = (trX1 - trX1.min())/(trX1.max() - trX1.min())
     
@@ -269,7 +283,8 @@ in4 = neural_net.layers[3](in3).numpy()
 in5 = neural_net.layers[4](in4).numpy()
 in6 = neural_net.layers[5](in5).numpy()
 in7 = neural_net.layers[6](in6).numpy()
-
+in8 = neural_net.layers[7](in7).numpy()
+in9 = neural_net.layers[8](in8).numpy()
 # in3 = neural_net.layers[2](in2).numpy()
 
 # ##we can also select the model inside the inside layer
@@ -291,7 +306,15 @@ in7 = neural_net.layers[6](in6).numpy()
 for i in range(40):
     print(i)
     plt.imshow(trainX[8000,:,:,i])
-    plt.show()
+    plt.show()# create target from video itself. 
+
+#%%    Normalize and split
+trainX = np.array(trainX, dtype = np.float32)
+trainY = np.array(trainY, dtype = np.float32)
+
+
+trainY = trainY - trainY.min(axis = 1)[:, np.newaxis]
+# trainY = trainY/(trainY.max(axis = 1)[:,np.newaxis]
     
     
 #%% Get_weights and Set_weights
@@ -321,7 +344,7 @@ fig=plt.figure(figsize=(8, 8))
 columns = 4
 rows = 4
 for i in range(1, columns*rows +1):
-    img = in6[0, :,:, 30+i]
+    img = in6[0, :,:, 47+i]
     fig.add_subplot(rows, columns, i)
     plt.imshow(img)
 plt.show()
