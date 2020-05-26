@@ -42,7 +42,7 @@ subjects = ['/Subject1_still', '/Subject2_still', '/Subject3_still', '/Subject4_
 
 im_mode = ['/IR', '/RGB_raw', '/RGB_demosaiced']
 
-path_dir = path_dir + subjects[7]
+path_dir = path_dir + subjects[2]
 
 iD_ir = path_dir +im_mode[1]
 
@@ -224,7 +224,7 @@ def Val_loss (neural_net, testX, testY):
     
     
 #%% Bringing Network
-from net_work_def import ConvNet, ConvNet1, MtlNetwork_head, MtlNetwork_body
+from net_work_def import  MtlNetwork_head, MtlNetwork_body
 # power of CNN
 #%% load network
 # neural_net = ConvNet(num_classes)
@@ -267,7 +267,7 @@ rows = 4
 for j in range(1, columns*rows +1):
     
     i =randint( 5040,5100)
-    i= 5200+j+j
+    i=  5600+j+j
     print(i)
     trX1 = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     trX1 = np.moveaxis(trX1, 0,-1) # very important line in axis changeing 
