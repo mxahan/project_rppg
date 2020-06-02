@@ -40,11 +40,11 @@ class InceptMod(keras.Model):
         self.ch = ch
         self.strides = strides
         
-        self.conv1 = ConvBNRelu(ch, strides=strides)
+        self.conv1 = ConvBNRelu(ch, kernel_size=1, strides=strides)
         
-        self.conv2 = ConvBNRelu(ch, strides=strides)
+        self.conv2 = ConvBNRelu(ch, kernel_size=3, strides=strides)
         
-        self.conv3_1 = ConvBNRelu(ch, strides=strides)
+        self.conv3_1 = ConvBNRelu(ch, kernel_size=5,  strides=strides)
         
         self.conv3_2 = ConvBNRelu(ch, strides=strides)
         
@@ -339,6 +339,10 @@ class MtlNetwork_body(Model): # Vitamon network except inception layer
         self.avgpool2 = layers.AveragePooling2D(2, strides= 2)
         
         self.flatten = layers.Flatten()
+        
+        self.fc1_1 = layers.Dense(512, activation=tf.nn.relu)
+        
+        self.fc1_2 = layers.Dense(512, activation=tf.nn.relu)
 
 
     # Set forward pass.
@@ -368,6 +372,9 @@ class MtlNetwork_body(Model): # Vitamon network except inception layer
         
         x = self.flatten(x)
         
+        x = self.fc1_1(x)
+        x = self.fc1_2(x)
+        
         
 
         
@@ -384,9 +391,7 @@ class MtlNetwork_head(Model): # Vitamon network except inception layer
         super(MtlNetwork_head, self).__init__()
         # Convolution Layer with 32 filters and a kernel size of 5.
 
-        self.fc1_1 = layers.Dense(512, activation=tf.nn.relu)
-        
-        self.fc1_2 = layers.Dense(512, activation=tf.nn.relu)
+
         # Apply Dropout (if is_training is False, dropout is not applied).
 
         # Output layer, class prediction.
@@ -395,8 +400,7 @@ class MtlNetwork_head(Model): # Vitamon network except inception layer
     # Set forward pass.
     def call(self, x, training=False):
         
-        x = self.fc1_1(x)
-        x = self.fc1_2(x)
+
         x = self.out1(x)
         x = tf.nn.tanh(x)
         # print(x3.shape)
