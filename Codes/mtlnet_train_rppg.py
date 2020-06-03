@@ -42,7 +42,7 @@ subjects = ['/Subject1_still', '/Subject2_still', '/Subject3_still', '/Subject4_
 
 im_mode = ['/IR', '/RGB_raw', '/RGB_demosaiced']
 
-path_dir = path_dir + subjects[3]
+path_dir = path_dir + subjects[2]
 
 iD_ir = path_dir +im_mode[1]
 
@@ -123,7 +123,7 @@ num_classes = 80
 num_features = 100*100*40 
 
 # Training parameters. Sunday, May 24, 2020 
-learning_rate = 0.0008 # start with 0.001
+learning_rate = 0.0004 # start with 0.001
 training_steps = 50000
 batch_size = 16
 display_step = 100
@@ -340,17 +340,17 @@ for j in range( 1, columns*rows +1 ):
     i =randint( 5040, 5100)
     i=  50 + j + j
     print(i)
-    # tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
-    # tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
-    # gt = pulR[i*2:i*2+80]
-    # gt = (gt-gt.min())/(gt.max()-gt.min())
+    tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
+    tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
+    gt = pulR[i*2:i*2+80]
+    gt = (gt-gt.min())/(gt.max()-gt.min())
     
     
-    # i  = 5+j +j
-    # tX = teX1[i]    
-    # gt = teY1[i]    
+    i  = 5+j +j
     tX = teX1[i]    
-    gt = 0.5*(teY1[i]+1)
+    gt = 0.5*(teY1[i]+1)    
+    # tX = teX[i]    
+    # gt = 0.5*(teY[i]+1)
 
     
     fig.add_subplot(rows, columns, j)

@@ -324,16 +324,14 @@ head2 = MtlNetwork_head(num_classes)
 neural_net1 =  tf.keras.Sequential([mtl_body, head1])
 neural_net2 =  tf.keras.Sequential([mtl_body, head2])
 
-
 # Great result with multitasking model
 
 
 #%% Training the actual network
 # single net
 # inarg = (neural_net, train_data)
-
-
 # multi-task net
+
 inarg = (neural_net1,neural_net2, train_data)
 
 
