@@ -121,7 +121,7 @@ num_classes = 80 # total classes (0-9 digits).
 num_features = 100*100*40 # data features (img shape: 28*28).
 
 # Training parameters. Sunday, May 24, 2020 
-learning_rate = 0.0008 # start with 0.001
+learning_rate = 0.0005 # start with 0.001
 training_steps = 80000
 batch_size = 16
 display_step = 100
@@ -212,10 +212,10 @@ def train_nn(neural_net, train_data):
         if step % (display_step*2) == 0:
             pred = neural_net(batch_x, training=True)
             loss = RootMeanSquareLoss(batch_y, pred)
-            print("step: %i, loss: %f" % (step, tf.reduce_mean(loss)))
             train_loss.append(tf.reduce_mean(loss))
             Val_loss(neural_net, teX[0:16], teY[0:16])
-            
+            print("step: %i, loss: %f val Loss: %f" % (step, tf.reduce_mean(loss), val_loss[-1]))
+        
             
 def Val_loss (neural_net, testX, testY):
     pred = neural_net(testX, training = False)
@@ -248,7 +248,7 @@ with tf.device('gpu:0/'):
     train_nn(*inarg)
 
 #%% Model weight  save
-# neural_net.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub4RGB_raw')
+# neural_net.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub3RGB_raw')
 #my_checkpoint, sub3IR, sub1IR, sub4RGB_raw'
 
 #%% Load weight load
@@ -267,7 +267,7 @@ rows = 4
 for j in range(1, columns*rows +1):
     
     i =randint( 5040,5100)
-    i= 5050+j+j
+    i= 5050+j*2+j*5
     print(i)
     trX1 = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     trX1 = np.moveaxis(trX1, 0,-1) # very important line in axis changeing 

@@ -37,7 +37,7 @@ from sklearn.model_selection import train_test_split
 
 path_dir = '../../../Dataset/datavideo/'
 
-subjects = ['/sub10_me']
+subjects = ['/sub1_me']
 
 path_dir = path_dir + subjects[0]
 
@@ -91,15 +91,15 @@ data =  np.array(data)
 #%% ppg loading
 import pandas as pd
 
-# x = np.array(pd.read_csv(path_dir + "/gtdump.xmp"))
-# pulR = x[:,3]
-# time_axis  = x[:,0] 
+x = np.array(pd.read_csv(path_dir + "/gtdump.xmp"))
+pulR = x[:,3]
+time_axis  = x[:,0] 
 
 ###### or the followings 
 
-x = np.loadtxt(path_dir+"/ground_truth.txt")
-pulR = x[0,:]
-time_axis  = x[2,:] 
+# x = np.loadtxt(path_dir+"/ground_truth.txt")
+# pulR = x[0,:]
+# time_axis  = x[2,:] 
 
 # ppg Hz 62.5!
 
@@ -115,7 +115,7 @@ time_axis  = x[2,:]
 # For subject 3 go till 7100
 
 random.seed(1)
-rv = np.arange(0,1800, 2)
+rv = np.arange(0,1000, 2)
 # np.random.shuffle(rv)
 
 
@@ -139,20 +139,22 @@ for j,i in enumerate(rv):
     
     img = np.reshape(data[i:i+frame_cons,:,:,0], [frame_cons, *im_size])
     img = np.moveaxis(img, 0,-1)
+    print(i)
     trainX.append(img)
-    # i = np.round(i/(fps*(time_axis[5]-time_axis[4]))) +1
-    ppg = pulR[i: i+40,0]
+    i = np.int(i/(fps*0.016)) +1
+    ppg = pulR[i: i+80,0]
+    print(i)
     trainY.append(ppg)
 
 
 
 #%% Some parameter definition
 
-num_classes = 40
+num_classes = 80
 num_features = 100*100*40 
 
 # Training parameters. Sunday, May 24, 2020 
-learning_rate = 0.0002 # start with 0.001
+learning_rate = 0.0004 # start with 0.001
 training_steps = 50000
 batch_size = 16
 display_step = 100
@@ -183,10 +185,7 @@ trX, teX, trY, teY = train_test_split(trainX , trainY,
                                       test_size = .1, random_state = 42)
 
 
-# for MTL
-if 1==0:
-    zercon = np.zeros(trY.shape)
-    trY = np.concatenate([trY, zercon], axis = -1)
+
 #%% tensorflow dataload
 
 train_data = tf.data.Dataset.from_tensor_slices((trX, trY))
@@ -231,7 +230,7 @@ def RootMeanSquareLoss(x,y):
     # print(loss2.shape)
     
     # print(tf.reduce_mean(loss), tf.reduce_mean(loss2))
-    return loss + 0.25*loss2
+    return loss + 2*loss2
 
 
 #%%  Optimizer Definition
@@ -334,7 +333,6 @@ neural_net2 =  tf.keras.Sequential([mtl_body, head2])
 
 inarg = (neural_net1,neural_net2, train_data)
 
-
 with tf.device('gpu:0/'):
     train_nn(*inarg)
 
@@ -343,8 +341,8 @@ with tf.device('gpu:0/'):
 #my_checkpoint, sub3IR, sub1IR, sub4RGB_raw', sub3RGB_raw
 
 #%% Load weight load
-# neural_net.load_weights(
-#       '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub1IR')
+# neural_net1.load_weights(
+#       '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub3RGB_raw')
 
 #%% Random testing
 
@@ -362,20 +360,20 @@ rows = 4
 for j in range( 1, columns*rows +1 ):
     
     i =randint( 5040, 5100)
-    i=  1940 + j + j
+    i=   1040 + j + j
     print(i)
     tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
-    # i = np.int(i/(fps*0.016)) +1
-    gt = pulR[i: i+40,0]
+    i = np.int(i/(fps*0.016)) +1
+    gt = pulR[i: i+80,0]
     gt = (gt-gt.min())/(gt.max()-gt.min())
     
     
-    # i  = 5+j +j
-    # tX = teX[i]    
-    # gt = 0.5*(teY[i]  +1)  
-    # tX = teX[i]    
-    # gt = 0.5*(teY[i]+1)
+    # i  = 10+j +j
+    # # tX = teX[i]    
+    # # gt = 0.5*(teY[i]  +1)  
+    # tX = trX[i]    
+    # gt = 0.5*(trY[i]+1)
 
     
     fig.add_subplot(rows, columns, j)
