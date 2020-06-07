@@ -42,7 +42,7 @@ subjects = ['/Subject1_still', '/Subject2_still', '/Subject3_still', '/Subject4_
 
 im_mode = ['/IR', '/RGB_raw', '/RGB_demosaiced']
 
-path_dir = path_dir + subjects[2]
+path_dir = path_dir + subjects[4]
 
 iD_ir = path_dir +im_mode[1]
 
@@ -123,7 +123,7 @@ num_classes = 80
 num_features = 100*100*40 
 
 # Training parameters. Sunday, May 24, 2020 
-learning_rate = 0.0004 # start with 0.001
+learning_rate = 0.0008 # start with 0.001
 training_steps = 50000
 batch_size = 16
 display_step = 100
@@ -202,52 +202,52 @@ def RootMeanSquareLoss(x,y):
     # print(loss2.shape)
     
     # print(tf.reduce_mean(loss), tf.reduce_mean(loss2))
-    return loss + 0.25*loss2
+    return loss + 0.5*loss2
 
 
 #%%  Optimizer Definition
 optimizer = tf.optimizers.SGD(learning_rate)
 optimizer1 = tf.optimizers.SGD(learning_rate/2)
 
-def run_optimization(neural_net, x,y):    
-    with tf.GradientTape() as g:
-        pred =  neural_net(x, training = True)
-        loss =  RootMeanSquareLoss(y, pred)  # change for mtl
-        
-    
-    
-    convtrain_variables =  neural_net.layers[0].trainable_variables
-    fcntrain_variables =  neural_net.layers[1].trainable_variables
-    
-    # trainable_variables =  neural_net.trainable_variables[:-6] 
-    # also there are other ways to update the gradient it would give the same results
-    # trainable_var is a list, select your intended layers: use append
-    
-    gradients =  g.gradient(loss, convtrain_variables+fcntrain_variables) 
-    # gradient and trainable variables are list
-    
-    grads1 =  gradients[:len(convtrain_variables)]
-    grads2 = gradients[len(convtrain_variables):]
-    
-    optimizer.apply_gradients(zip(grads1, convtrain_variables))
-    optimizer1.apply_gradients(zip(grads2, fcntrain_variables))
-    
-    # Or the following section 
-    
-# def run_optimization(neural_net, x,y):    # for the second network varies in head
+# def run_optimization(neural_net, x,y):    
 #     with tf.GradientTape() as g:
-#         pred =  neural_net(x, training = True) 
+#         pred =  neural_net(x, training = True)
 #         loss =  RootMeanSquareLoss(y, pred)  # change for mtl
         
     
-#     trainable_variables =  neural_net.trainable_variables
+    
+#     convtrain_variables =  neural_net.layers[0].trainable_variables
+#     fcntrain_variables =  neural_net.layers[1].trainable_variables
+    
 #     # trainable_variables =  neural_net.trainable_variables[:-6] 
 #     # also there are other ways to update the gradient it would give the same results
 #     # trainable_var is a list, select your intended layers: use append
     
-#     gradients =  g.gradient(loss, trainable_variables)
+#     gradients =  g.gradient(loss, convtrain_variables+fcntrain_variables) 
+#     # gradient and trainable variables are list
     
-#     optimizer.apply_gradients(zip(gradients, trainable_variables))
+#     grads1 =  gradients[:len(convtrain_variables)]
+#     grads2 = gradients[len(convtrain_variables):]
+    
+#     optimizer.apply_gradients(zip(grads1, convtrain_variables))
+#     optimizer1.apply_gradients(zip(grads2, fcntrain_variables))
+    
+    # Or the following section 
+    
+def run_optimization(neural_net, x,y):    # for the second network varies in head
+    with tf.GradientTape() as g:
+        pred =  neural_net(x, training = True) 
+        loss =  RootMeanSquareLoss(y, pred)  # change for mtl
+        
+    
+    trainable_variables =  neural_net.trainable_variables
+    # trainable_variables =  neural_net.trainable_variables[:-6] 
+    # also there are other ways to update the gradient it would give the same results
+    # trainable_var is a list, select your intended layers: use append
+    
+    gradients =  g.gradient(loss, trainable_variables)
+    
+    optimizer.apply_gradients(zip(gradients, trainable_variables))
 
 
  
@@ -265,10 +265,10 @@ def train_nn(neural_net1, neural_net2, train_data):
         
         
         
-        i = randint(0,trX1.shape[0]-20)
-        batch_x1 = tf.convert_to_tensor(trX1[i:i+batch_size])
-        batch_y1 = tf.convert_to_tensor(trY1[i:i+batch_size])
-        run_optimization(neural_net2, batch_x1, batch_y1)
+        # i = randint(0,trX1.shape[0]-20)
+        # batch_x1 = tf.convert_to_tensor(trX1[i:i+batch_size])
+        # batch_y1 = tf.convert_to_tensor(trY1[i:i+batch_size])
+        # run_optimization(neural_net2, batch_x1, batch_y1)
         
         
         if step % (display_step*2) == 0:
@@ -315,12 +315,12 @@ with tf.device('gpu:0/'):
     train_nn(*inarg)
 
 #%% Model weight  save
-# neural_net.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub4RGB_raw')
+# neural_net1.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub4RGB_raw')
 #my_checkpoint, sub3IR, sub1IR, sub4RGB_raw', sub3RGB_raw
 
 #%% Load weight load
-# neural_net.load_weights(
-#       '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub1IR')
+# neural_net1.load_weights(
+#        '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub3RGB_raw')
 
 #%% Random testing
 
@@ -338,7 +338,7 @@ rows = 4
 for j in range( 1, columns*rows +1 ):
     
     i =randint( 5040, 5100)
-    i=  50 + j + j
+    i=  5300 + j + j
     print(i)
     tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
@@ -346,9 +346,9 @@ for j in range( 1, columns*rows +1 ):
     gt = (gt-gt.min())/(gt.max()-gt.min())
     
     
-    i  = 5+j +j
-    tX = teX1[i]    
-    gt = 0.5*(teY1[i]+1)    
+    # i  = 5+j +j
+    # tX = teX1[i]    
+    # gt = 0.5*(teY1[i]+1)    
     # tX = teX[i]    
     # gt = 0.5*(teY[i]+1)
 
@@ -361,7 +361,7 @@ for j in range( 1, columns*rows +1 ):
     
 
     # predd = neural_net(trX1) 
-    predd = neural_net2(tX1) 
+    predd = neural_net1(tX1) 
     plt.plot(predd[0])
     plt.legend(["Ground Truth", "Predicted"])
     plt.xlabel('time')
@@ -456,3 +456,57 @@ plt.plot(pulR[500:4000])
 plt.xlabel('time')
 plt.ylabel('PPG magnitude')
 plt.title("PPG magnitude changes")
+
+#%% Signal Reconstruction
+
+divVec = np.ones([80])
+divVec1 = np.zeros([80]) 
+
+gtV = np.zeros([80])
+
+recPPG = np.zeros([80])
+
+for j in range(6):
+    
+    olap = 40
+    i = 5025+ j*olap
+    print(i)
+    tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
+    tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
+    gt = pulR[i*2:i*2+80]
+    gt = (gt-gt.min())/(gt.max()-gt.min())
+    
+    
+    # i  = 5+j +j
+    # tX = teX1[i]    
+    # gt = 0.5*(teY1[i]+1)    
+    # tX = teX[i]    
+    # gt = 0.5*(teY[i]+1)
+
+    
+
+    tX1 = np.reshape(tX, [-1, 100,100,40])
+
+    
+    tX1 = (tX1 - tX1.min())/(tX1.max() - tX1.min())
+    
+
+    # predd = neural_net(trX1) 
+    predd = neural_net1(tX1) 
+    
+    recPPG[-80:] = recPPG[-80:] + predd
+    
+    recPPG = np.concatenate((recPPG, np.zeros([olap*2])))
+    
+    
+    gtV[-80:] = gtV[-80:] + np.squeeze(gt*2-1)
+    gtV = np.concatenate((gtV, np.zeros([olap*2])))
+    
+    
+    divVec1[-80:] = divVec1[-80:]+divVec
+    divVec1 = np.concatenate((divVec1, np.zeros([olap*2])))    
+    
+    
+plt.plot(recPPG[120:400])
+plt.plot(gtV[120:400])
+plt.show()
