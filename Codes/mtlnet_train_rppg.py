@@ -24,6 +24,7 @@ import glob
 from scipy.io import loadmat
 
 import random
+
 from random import seed, randint
 
 from sklearn.model_selection import train_test_split
@@ -31,7 +32,6 @@ from sklearn.model_selection import train_test_split
 
 # load Pathdir
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/IR'
-
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_raw'
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_demosaiced'
 
@@ -42,7 +42,7 @@ subjects = ['/Subject1_still', '/Subject2_still', '/Subject3_still', '/Subject4_
 
 im_mode = ['/IR', '/RGB_raw', '/RGB_demosaiced']
 
-path_dir = path_dir + subjects[4]
+path_dir = path_dir + subjects[5]
 
 iD_ir = path_dir +im_mode[1]
 
@@ -52,6 +52,7 @@ files = glob.glob(dataPath)  # care about the serialization
 # end load pathdir
 list.sort(files) # serialing the data
 
+print((len(files)-5000)/30)
 # load images  from 1 subject
 #%% Load Video and load Mat file
 
@@ -87,7 +88,7 @@ pulR = np.array(pulR)
 # For subject 3 go till 7100
 
 random.seed(1)
-rv = np.arange(0,5000, 2)
+rv = np.arange(0,3000, 1)
 np.random.shuffle(rv)
 
 
@@ -202,11 +203,11 @@ def RootMeanSquareLoss(x,y):
     # print(loss2.shape)
     
     # print(tf.reduce_mean(loss), tf.reduce_mean(loss2))
-    return loss + 0.5*loss2
+    return loss + 0.25*loss2
 
 
 #%%  Optimizer Definition
-optimizer = tf.optimizers.SGD(learning_rate)
+optimizer = tf.optimizers.SGD(learning_rate*2)
 optimizer1 = tf.optimizers.SGD(learning_rate/2)
 
 # def run_optimization(neural_net, x,y):    
@@ -243,10 +244,8 @@ def run_optimization(neural_net, x,y):    # for the second network varies in hea
     trainable_variables =  neural_net.trainable_variables
     # trainable_variables =  neural_net.trainable_variables[:-6] 
     # also there are other ways to update the gradient it would give the same results
-    # trainable_var is a list, select your intended layers: use append
-    
-    gradients =  g.gradient(loss, trainable_variables)
-    
+    # trainable_var is a list, select your intended layers: use append  
+    gradients =  g.gradient(loss, trainable_variables)  
     optimizer.apply_gradients(zip(gradients, trainable_variables))
 
 
@@ -305,22 +304,21 @@ neural_net2 =  tf.keras.Sequential([mtl_body, head2])
 #%% Training the actual network
 # single net
 # inarg = (neural_net, train_data)
-
-
 # multi-task net
-inarg = (neural_net1,neural_net2, train_data)
 
+inarg = (neural_net1, neural_net2, train_data)
 
 with tf.device('gpu:0/'):
     train_nn(*inarg)
 
 #%% Model weight  save
-# neural_net1.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub4RGB_raw')
-#my_checkpoint, sub3IR, sub1IR, sub4RGB_raw', sub3RGB_raw
+# neural_net1.layers[0].save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub2RGB_mos_mtlbod')
+# 
+###my_checkpoint, sub3IR, sub1IR, sub4RGB_raw', sub3RGB_raw, sub2RGB_mos_mtlbod
 
 #%% Load weight load
 # neural_net1.load_weights(
-#        '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub3RGB_raw')
+#         '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub6RGB_raw')
 
 #%% Random testing
 
@@ -338,7 +336,7 @@ rows = 4
 for j in range( 1, columns*rows +1 ):
     
     i =randint( 5040, 5100)
-    i=  5300 + j + j
+    i=  5040 + j + j
     print(i)
     tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
@@ -466,24 +464,21 @@ gtV = np.zeros([80])
 
 recPPG = np.zeros([80])
 
-for j in range(6):
+for j in range(2):
     
     olap = 40
-    i = 5025+ j*olap
+    i = 5020+ j*olap
     print(i)
     tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
     gt = pulR[i*2:i*2+80]
     gt = (gt-gt.min())/(gt.max()-gt.min())
     
-    
     # i  = 5+j +j
     # tX = teX1[i]    
     # gt = 0.5*(teY1[i]+1)    
     # tX = teX[i]    
-    # gt = 0.5*(teY[i]+1)
-
-    
+    # gt = 0.5*(teY[i]+1)    
 
     tX1 = np.reshape(tX, [-1, 100,100,40])
 
@@ -507,6 +502,10 @@ for j in range(6):
     divVec1 = np.concatenate((divVec1, np.zeros([olap*2])))    
     
     
-plt.plot(recPPG[120:400])
-plt.plot(gtV[120:400])
-plt.show()
+
+plt.plot(gtV)
+plt.plot(recPPG)
+plt.legend(["Ground Truth", "Predicted"])
+plt.xlabel('time')
+plt.ylabel('magnitude')
+plt.show() 
