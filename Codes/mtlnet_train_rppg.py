@@ -42,9 +42,9 @@ subjects = ['/Subject1_still', '/Subject2_still', '/Subject3_still', '/Subject4_
 
 im_mode = ['/IR', '/RGB_raw', '/RGB_demosaiced']
 
-path_dir = path_dir + subjects[5]
+path_dir = path_dir + subjects[1]
 
-iD_ir = path_dir +im_mode[1]
+iD_ir = path_dir +im_mode[0]
 
 dataPath = os.path.join(iD_ir, '*.pgm')
 
@@ -88,7 +88,7 @@ pulR = np.array(pulR)
 # For subject 3 go till 7100
 
 random.seed(1)
-rv = np.arange(0,3000, 1)
+rv = np.arange(0,2000, 1)
 np.random.shuffle(rv)
 
 
@@ -312,13 +312,14 @@ with tf.device('gpu:0/'):
     train_nn(*inarg)
 
 #%% Model weight  save
-# neural_net1.layers[0].save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub2RGB_mos_mtlbod')
+# neural_net1.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub4RGB_raw')
 # 
 ###my_checkpoint, sub3IR, sub1IR, sub4RGB_raw', sub3RGB_raw, sub2RGB_mos_mtlbod
 
 #%% Load weight load
+
 # neural_net1.load_weights(
-#         '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub6RGB_raw')
+        # '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub2RGB_raw')
 
 #%% Random testing
 
@@ -336,7 +337,7 @@ rows = 4
 for j in range( 1, columns*rows +1 ):
     
     i =randint( 5040, 5100)
-    i=  5040 + j + j
+    i=  2900 + j + j
     print(i)
     tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
@@ -424,6 +425,8 @@ tr_l = np.array(train_loss)
 
 val_l = np.array(val_loss)
 
+# For suject 2 go till 6230
+# For subject 3 go till 7100
 plt.plot(tr_l, 'r', val_l, 'g')
 
 plt.xlabel("training step")
@@ -464,10 +467,10 @@ gtV = np.zeros([80])
 
 recPPG = np.zeros([80])
 
-for j in range(2):
+for j in range(5):
     
     olap = 40
-    i = 5020+ j*olap
+    i = 5500+ j*olap
     print(i)
     tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 

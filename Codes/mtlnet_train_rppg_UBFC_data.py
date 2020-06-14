@@ -37,7 +37,7 @@ from sklearn.model_selection import train_test_split
 
 path_dir = '../../../Dataset/datavideo/'
 
-subjects = ['/sub1_me']
+subjects = ['/sub20_me']
 
 path_dir = path_dir + subjects[0]
 
@@ -115,7 +115,7 @@ time_axis  = x[:,0]
 # For subject 3 go till 7100
 
 random.seed(1)
-rv = np.arange(0,1000, 2)
+rv = np.arange(0,1000, 1)
 # np.random.shuffle(rv)
 
 
@@ -341,8 +341,9 @@ with tf.device('gpu:0/'):
 #my_checkpoint, sub3IR, sub1IR, sub4RGB_raw', sub3RGB_raw
 
 #%% Load weight load
+
 # neural_net1.load_weights(
-#       '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub3RGB_raw')
+        # '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub2RGB_raw')
 
 #%% Random testing
 
@@ -360,7 +361,7 @@ rows = 4
 for j in range( 1, columns*rows +1 ):
     
     i =randint( 5040, 5100)
-    i=   1040 + j + j
+    i=   1060 + j + j
     print(i)
     tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
@@ -479,3 +480,66 @@ plt.plot(pulR[500:4000])
 plt.xlabel('time')
 plt.ylabel('PPG magnitude')
 plt.title("PPG magnitude changes")
+
+
+#%% Signal Reconstruction
+
+divVec = np.ones([80])
+divVec1 = np.zeros([80]) 
+
+gtV = np.zeros([80])
+
+recPPG = np.zeros([80])
+
+for j in range(6):
+    
+    olap = 40
+    i = 1500+ j*olap
+    print(i)
+    
+    
+
+    
+    tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
+    tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
+    
+    i = np.int(i/(fps*0.016)) +1
+
+    gt = pulR[i:i+80]
+    gt = (gt-gt.min())/(gt.max()-gt.min())
+    
+    # i  = 5+j +j
+    # tX = teX1[i]    
+    # gt = 0.5*(teY1[i]+1)    
+    # tX = teX[i]    
+    # gt = 0.5*(teY[i]+1)    
+
+    tX1 = np.reshape(tX, [-1, 100,100,40])
+
+    
+    tX1 = (tX1 - tX1.min())/(tX1.max() - tX1.min())
+    
+
+    # predd = neural_net(trX1) 
+    predd = neural_net1(tX1) 
+    
+    recPPG[-80:] = recPPG[-80:] + predd
+    
+    recPPG = np.concatenate((recPPG, np.zeros([olap*2])))
+    
+    
+    gtV[-80:] = gtV[-80:] + np.squeeze(gt*2-1)
+    gtV = np.concatenate((gtV, np.zeros([olap*2])))
+    
+    
+    divVec1[-80:] = divVec1[-80:]+divVec
+    divVec1 = np.concatenate((divVec1, np.zeros([olap*2])))    
+    
+    
+
+plt.plot(gtV)
+plt.plot(recPPG)
+plt.legend(["Ground Truth", "Predicted"])
+plt.xlabel('time')
+plt.ylabel('magnitude')
+plt.show() 
