@@ -42,9 +42,9 @@ subjects = ['/Subject1_still', '/Subject2_still', '/Subject3_still', '/Subject4_
 
 im_mode = ['/IR', '/RGB_raw', '/RGB_demosaiced']
 
-path_dir = path_dir + subjects[1]
+path_dir = path_dir + subjects[4]
 
-iD_ir = path_dir +im_mode[0]
+iD_ir = path_dir +im_mode[1]
 
 dataPath = os.path.join(iD_ir, '*.pgm')
 
@@ -319,7 +319,7 @@ with tf.device('gpu:0/'):
 #%% Load weight load
 
 # neural_net1.load_weights(
-        # '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub2RGB_raw')
+#         '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub1RGB_raw')
 
 #%% Random testing
 
@@ -332,12 +332,12 @@ with tf.device('gpu:0/'):
 i = 811
 
 fig=plt.figure(figsize=(8, 8))
-columns = 4
-rows = 4
+columns = 3
+rows = 3
 for j in range( 1, columns*rows +1 ):
     
     i =randint( 5040, 5100)
-    i=  2900 + j + j
+    i=  5050  + j*5
     print(i)
     tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
@@ -360,13 +360,21 @@ for j in range( 1, columns*rows +1 ):
     
 
     # predd = neural_net(trX1) 
+    
+    
     predd = neural_net1(tX1) 
     plt.plot(predd[0])
+
     plt.legend(["Ground Truth", "Predicted"])
-    plt.xlabel('time')
-    plt.ylabel('magnitude')
-    
+    plt.xlabel('time sample \n (60 samples = 1 second)', fontsize =12)
+    plt.ylabel('magnitude \n (Normalized voltage)', fontsize = 12)
+    from matplotlib import rcParams
+    rcParams['lines.linewidth'] = 2
+    rcParams['lines.color'] = 'r'
+   
+# plt.savefig('sub4goodres.eps', format = 'eps', dpi= 600)
 plt.show()
+
 
 
 
@@ -470,7 +478,7 @@ recPPG = np.zeros([80])
 for j in range(5):
     
     olap = 40
-    i = 5500+ j*olap
+    i = 100+ j*olap
     print(i)
     tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
@@ -506,9 +514,21 @@ for j in range(5):
     
     
 
-plt.plot(gtV)
-plt.plot(recPPG)
-plt.legend(["Ground Truth", "Predicted"])
-plt.xlabel('time')
-plt.ylabel('magnitude')
+
+fig = plt.figure(figsize=(19.20,10.80))
+
+plt.plot(gtV[:-80])
+plt.plot(recPPG[:-80])
+plt.legend(["Ground Truth", "Predicted"], fontsize = 40)
+plt.xlabel('time sample \n (60 samples = 1 second)', fontsize =30)
+plt.ylabel('PPG magnitude \n (Normalized voltage)', fontsize = 30)
+from matplotlib import rcParams
+rcParams['lines.linewidth'] = 4
+rcParams['lines.color'] = 'r'
+plt.xticks(fontsize = 20)
+plt.yticks(fontsize = 20)
+
+# plt.savefig('tx4to5Notrain.eps', format = 'eps', dpi= 1000)
+
+
 plt.show() 

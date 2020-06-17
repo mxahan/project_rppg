@@ -42,7 +42,7 @@ subjects = ['/Subject1_still', '/Subject2_still', '/Subject3_still', '/Subject4_
 
 im_mode = ['/IR', '/RGB_raw', '/RGB_demosaiced']
 
-path_dir = path_dir + subjects[2]
+path_dir = path_dir + subjects[3]
 
 iD_ir = path_dir +im_mode[1]
 
@@ -253,7 +253,7 @@ with tf.device('gpu:0/'):
 
 #%% Load weight load
 # neural_net.load_weights(
-#       '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub1IR')
+#       '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub4RGB_raw)
 
 #%% Random testing
 # modification in network 
