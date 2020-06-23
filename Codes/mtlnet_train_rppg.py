@@ -513,10 +513,10 @@ for j in range(5):
     divVec1 = np.concatenate((divVec1, np.zeros([olap*2])))    
     
     
+    
 
 
 fig = plt.figure(figsize=(19.20,10.80))
-
 plt.plot(gtV[:-80])
 plt.plot(recPPG[:-80])
 plt.legend(["Ground Truth", "Predicted"], fontsize = 40)
