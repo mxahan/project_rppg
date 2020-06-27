@@ -42,7 +42,7 @@ subjects = ['/Subject1_still', '/Subject2_still', '/Subject3_still', '/Subject4_
 
 im_mode = ['/IR', '/RGB_raw', '/RGB_demosaiced']
 
-path_dir = path_dir + subjects[4]
+path_dir = path_dir + subjects[3]
 
 iD_ir = path_dir +im_mode[1]
 
@@ -318,8 +318,8 @@ with tf.device('gpu:0/'):
 
 #%% Load weight load
 
-# neural_net1.load_weights(
-#         '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub1RGB_raw')
+neural_net1.load_weights(
+        '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub4RGB_raw')
 
 #%% Random testing
 
@@ -336,8 +336,8 @@ columns = 3
 rows = 3
 for j in range( 1, columns*rows +1 ):
     
-    i =randint( 5040, 5100)
-    i=  5050  + j*5
+    i =randint( 50, 5100)
+    i=  4400 -40 + j*40
     print(i)
     tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
@@ -410,7 +410,7 @@ in9 = neural_net1.layers[0].layers[8](in8).numpy()
 
 for i in range(40):
     print(i)
-    plt.imshow(trainX[8000,:,:,i])
+    plt.imshow(trainX[1000,:,:,i])
     plt.show()# create target from video itself. 
 
 #%%    Normalize and split
@@ -451,13 +451,17 @@ plt.legend(lst)
 #%% Better visualization
 
 fig=plt.figure(figsize=(8, 8))
-columns = 4
-rows = 4
+columns = 3
+rows = 3
 for i in range(1, columns*rows +1):
-    img = in6[0, :,:, 47+i]
+    img = in5[0, :,:, 9+i]
     fig.add_subplot(rows, columns, i)
     plt.imshow(img)
-plt.show()
+
+# plt.savefig('inter_filt', dpi= 1000)
+# plt.show()
+
+
 
 #%% PPG visulization
 
@@ -475,10 +479,10 @@ gtV = np.zeros([80])
 
 recPPG = np.zeros([80])
 
-for j in range(5):
+for j in range(6):
     
     olap = 40
-    i = 100+ j*olap
+    i = 5020+ j*olap
     print(i)
     tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
