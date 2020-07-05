@@ -28,32 +28,24 @@ import random
 from random import seed, randint
 
 from sklearn.model_selection import train_test_split
+
+import pandas as pd
 #%%  Data Load Parts
+
+
 
 # load Pathdir
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/IR'
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_raw'
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_demosaiced'
 
-path_dir = '../../../Dataset/Merl_Tim'
+path_dir = '../../../Dataset/Personal_collection/sub1_zahid/col1/test1/'
 
-subjects = ['/Subject1_still', '/Subject2_still', '/Subject3_still', '/Subject4_still',
-            '/Subject5_still', '/Subject6_still', '/Subject7_still', '/Subject8_still']
+ppgtotal =  pd.read_csv(path_dir + 'BVP.csv')
+EventMark = pd.read_csv(path_dir+'tags.csv')
 
-im_mode = ['/IR', '/RGB_raw', '/RGB_demosaiced']
-
-path_dir = path_dir + subjects[3]
-
-iD_ir = path_dir +im_mode[1]
-
-dataPath = os.path.join(iD_ir, '*.pgm')
-
-files = glob.glob(dataPath)  # care about the serialization
-# end load pathdir
-list.sort(files) # serialing the data
-
-print((len(files)-5000)/30)
-# load images  from 1 subject
+# Take time stamp and multiple by 64. Take starting time of the BVP file, 
+# subtract the tags.csv from the BVP start time, multiply by 64 to get the sample number. 
 #%% Load Video and load Mat file
 
 data = []
