@@ -34,59 +34,108 @@ import pandas as pd
 
 
 
+
 # load Pathdir
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/IR'
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_raw'
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_demosaiced'
 
-path_dir = '../../../Dataset/Personal_collection/sub1_zahid/col1/test1/'
+path_dir = '../../../Dataset/Personal_collection/sub1_zahid/col1/'
 
-ppgtotal =  pd.read_csv(path_dir + 'BVP.csv')
-EventMark = pd.read_csv(path_dir+'tags.csv')
+ppgtotal =  pd.read_csv(path_dir + 'test1/BVP.csv')
+EventMark = pd.read_csv(path_dir+'test1/tags.csv')
+
+dataPath = os.path.join(path_dir, '*.MOV')
+
+files = glob.glob(dataPath)  # care about the serialization
+# end load pathdir
+list.sort(files) # serialing the data
 
 # Take time stamp and multiple by 64. Take starting time of the BVP file, 
 # subtract the tags.csv from the BVP start time, multiply by 64 to get the sample number. 
+
 #%% Load Video and load Mat file
+
+# find start position by pressing the key position in empatica
+# test1.MOV led appear at the 307th frame.
+
+# perfect alignment! checked by (time_eM_last-time_eM_first)*30+start_press_sample  should
+# give the end press in video
+
+
 
 data = []
 im_size = (100,100)
 
-i = 0
-for f1 in files:  # make sure to stack serially
-    if i%1000==0:
-        print(f1)
-    img =  cv2.resize(cv2.imread(f1)[:,:,1], im_size)
-    img = img[:,:,np.newaxis]
-    data.append(img)
-    i+=1
+cap = cv2.VideoCapture(files[0])
+
+import pdb
+
+while(cap.isOpened()):
+    ret, frame = cap.read()
     
+    if ret==False:
+        break
+
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    
+    gray  = gray[:,:,1]
+    gray =  gray[10:900, 720:1500]
+    
+    gray = cv2.resize(gray, im_size)
+    
+    # pdb.set_trace()
+   
+    data.append(gray)
+    
+    cv2.imshow('frame', gray)
+    
+    
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+
+fps = cap.get(cv2.CAP_PROP_FPS)
+    
+cap.release()
+cv2.destroyAllWindows()
 data =  np.array(data)
-    
+
+#%% PPG signal selection and alignment. 
+# The starting points are the crucial, 
+# this section needs select both the sratrting of video and the ppg point
+
+# check fps
+# check starting time in BVP.csv
+evmarknp =  EventMark.to_numpy()
+ppgnp =  ppgtotal.to_numpy()
+
+start_gap =  evmarknp[0] - 1593893213  # check from BVP.csv column name. 
+# Check video starting point from watching the frame with the light event marker 
+end_point =  evmarknp[1] - evmarknp[0]
 
 
-x = loadmat(path_dir +'/PulseOX/pulseOx.mat')
 
-pulseoxR = np.squeeze(x['pulseOxRecord'])
+ppgnp_align =  ppgnp[np.int(start_gap*64):np.int((start_gap+end_point)*64)]
+data_align = data[306:307+np.int(end_point*30)+5]
 
-pulR = []
-for i in range(pulseoxR.shape[0]):
-    pulR.append(pulseoxR[i][0][0])  # check the inside shape sub 5 cause error
-    
-pulR = np.array(pulR)
-    
+
+
 #%% Prepare dataset for training
 # For subject 1,4 go till 5300
 # For suject 2 go till 6230
 # For subject 3 go till 7100
 
+# 40 frames considered to to equivalent to 85 samples in PPg
+
 random.seed(1)
-rv = np.arange(0,2000, 1)
+rv = np.arange(0,5000, 1)
 np.random.shuffle(rv)
 
 
 # rv = [randint(0, 5300) for _ in range(5000)] ## random removal 
 rv =  np.array(rv)
-pulR = np.reshape(pulR, [pulR.shape[0],1]) # take 45 frames together
+pulR = np.reshape(ppgnp_align, [ppgnp_align.shape[0],1]) # take 45 frames together
 #      #%%
 
 if 'trainX' in locals():
@@ -96,23 +145,26 @@ else:
     trainY = []
 
 
+data_align = data_align[:,:,:,np.newaxis]
 
 frame_cons = 40 # how many frame to consider at a time
 
 for j,i in enumerate(rv):
     
-    img = np.reshape(data[i:i+frame_cons,:,:,0], [frame_cons, *im_size])
+    img = np.reshape(data_align[i:i+frame_cons,:,:,0], [frame_cons, *im_size])
     img = np.moveaxis(img, 0,-1)
     trainX.append(img)
     
-    ppg = pulR[2*i: 2*i+80,0]
+    p_point = np.int(np.round(i*64/30))
+    
+    ppg = pulR[p_point: p_point+85, 0]
     trainY.append(ppg)
 
 
 
 #%% Some parameter definition
 
-num_classes = 80 
+num_classes = 85
 num_features = 100*100*40 
 
 # Training parameters. Sunday, May 24, 2020 
@@ -172,7 +224,7 @@ trainX = (trainX-trainX.min())
 
 trainX = trainX/ trainX.max()
 #trainY = (trainY-trainY.min())/(trainY.max()-trainY.min())
- # bad idea as global minima and outlines
+# bad idea as global minima and outlines
 
 trX1, teX1, trY1, teY1 = train_test_split(trainX , trainY, 
                                       test_size = .1, random_state = 42)
@@ -185,12 +237,14 @@ trX1, teX1, trY1, teY1 = train_test_split(trainX , trainY,
 
 
 #%% Loss function  
-# import pdb
+
 
 def RootMeanSquareLoss(x,y):
+    
+    # pdb.set_trace()  
     loss = tf.keras.losses.MSE(y_true = y, y_pred =x)  # initial one
     #return tf.reduce_mean(loss)  # some other shape similarity
-    # pdb.set_trace()   
+     
     loss2 = tf.reduce_mean((tf.math.abs(tf.math.sign(y))-tf.math.sign(tf.math.multiply(x,y))),axis = -1)
     # print(loss2.shape)
     
@@ -199,7 +253,7 @@ def RootMeanSquareLoss(x,y):
 
 
 #%%  Optimizer Definition
-optimizer = tf.optimizers.SGD(learning_rate*2)
+optimizer  = tf.optimizers.SGD(learning_rate*2)
 optimizer1 = tf.optimizers.SGD(learning_rate/2)
 
 # def run_optimization(neural_net, x,y):    
@@ -250,8 +304,10 @@ else:
 
 
 def train_nn(neural_net1, neural_net2, train_data):
+ 
         
-    for step, (batch_x, batch_y) in enumerate(train_data.take(training_steps), 1):     
+    for step, (batch_x, batch_y) in enumerate(train_data.take(training_steps), 1): 
+        # pdb.set_trace()
         run_optimization(neural_net1, batch_x, batch_y)
         
         
@@ -264,6 +320,7 @@ def train_nn(neural_net1, neural_net2, train_data):
         
         if step % (display_step*2) == 0:
             pred = neural_net1(batch_x, training=True)
+            # pdb.set_trace()
             loss = RootMeanSquareLoss(batch_y, pred)
             train_loss.append(tf.reduce_mean(loss))
             Val_loss(neural_net1, teX[0:16], teY[0:16])
