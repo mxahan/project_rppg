@@ -63,7 +63,6 @@ while(cap.isOpened()):
     
     if ret==False:
         break
-
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     
     gray  = gray[:,:,1]
@@ -365,7 +364,9 @@ for j in range( 1, columns*rows +1 ):
     print(i)
     tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
+    
     i = np.int(i/(fps*0.016)) +1
+    
     gt = pulR[i: i+80,0]
     gt = (gt-gt.min())/(gt.max()-gt.min())
     

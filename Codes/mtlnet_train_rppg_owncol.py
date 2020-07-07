@@ -114,8 +114,6 @@ start_gap =  evmarknp[0] - 1593893213  # check from BVP.csv column name.
 # Check video starting point from watching the frame with the light event marker 
 end_point =  evmarknp[1] - evmarknp[0]
 
-
-
 ppgnp_align =  ppgnp[np.int(start_gap*64):np.int((start_gap+end_point)*64)]
 data_align = data[306:307+np.int(end_point*30)+5]
 
@@ -129,7 +127,7 @@ data_align = data[306:307+np.int(end_point*30)+5]
 # 40 frames considered to to equivalent to 85 samples in PPg
 
 random.seed(1)
-rv = np.arange(0,5000, 1)
+rv = np.arange(0,5000, 1)+2000
 np.random.shuffle(rv)
 
 
@@ -249,7 +247,7 @@ def RootMeanSquareLoss(x,y):
     # print(loss2.shape)
     
     # print(tf.reduce_mean(loss), tf.reduce_mean(loss2))
-    return loss + 0.25*loss2
+    return loss + 0.5*loss2
 
 
 #%%  Optimizer Definition
@@ -378,6 +376,8 @@ with tf.device('gpu:0/'):
 
 # peak penalize (except mse)
 
+# Don't forget to align HERE!! 
+
 i = 811
 
 fig=plt.figure(figsize=(8, 8))
@@ -386,11 +386,15 @@ rows = 3
 for j in range( 1, columns*rows +1 ):
     
     i =randint( 50, 5100)
-    i=  4400 -40 + j*40
+    i=  8000+j*10
     print(i)
-    tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
+    tX = np.reshape(data_align[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
-    gt = pulR[i*2:i*2+80]
+    
+    p_point = np.int(np.round(i*64/30))
+    
+    gt = pulR[p_point: p_point+85, 0]
+
     gt = (gt-gt.min())/(gt.max()-gt.min())
     
     
@@ -503,7 +507,7 @@ fig=plt.figure(figsize=(8, 8))
 columns = 3
 rows = 3
 for i in range(1, columns*rows +1):
-    img = in5[0, :,:, 9+i]
+    img = in2[0, :,:, 19+i]
     fig.add_subplot(rows, columns, i)
     plt.imshow(img)
 
@@ -521,21 +525,24 @@ plt.title("PPG magnitude changes")
 
 #%% Signal Reconstruction
 
-divVec = np.ones([80])
-divVec1 = np.zeros([80]) 
+divVec = np.ones([85])
+divVec1 = np.zeros([85]) 
 
-gtV = np.zeros([80])
+gtV = np.zeros([85])
 
-recPPG = np.zeros([80])
+recPPG = np.zeros([85])
 
-for j in range(6):
+for j in range(8):
     
     olap = 40
-    i = 5020+ j*olap
+    i = 1500+ j*olap
     print(i)
-    tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
+    tX = np.reshape(data_align[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
-    gt = pulR[i*2:i*2+80]
+     
+    p_point = np.int(np.round(i*64/30))
+    
+    gt = pulR[p_point: p_point+85, 0]
     gt = (gt-gt.min())/(gt.max()-gt.min())
     
     # i  = 5+j +j
@@ -553,16 +560,16 @@ for j in range(6):
     # predd = neural_net(trX1) 
     predd = neural_net1(tX1) 
     
-    recPPG[-80:] = recPPG[-80:] + predd
+    recPPG[-85:] = recPPG[-85:] + predd
     
     recPPG = np.concatenate((recPPG, np.zeros([olap*2])))
     
     
-    gtV[-80:] = gtV[-80:] + np.squeeze(gt*2-1)
+    gtV[-85:] = gtV[-85:] + np.squeeze(gt*2-1)
     gtV = np.concatenate((gtV, np.zeros([olap*2])))
     
     
-    divVec1[-80:] = divVec1[-80:]+divVec
+    divVec1[-85:] = divVec1[-85:]+divVec
     divVec1 = np.concatenate((divVec1, np.zeros([olap*2])))    
     
     

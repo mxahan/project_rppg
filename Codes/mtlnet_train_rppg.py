@@ -482,7 +482,7 @@ recPPG = np.zeros([80])
 for j in range(6):
     
     olap = 40
-    i = 5020+ j*olap
+    i = 20+ j*olap
     print(i)
     tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
