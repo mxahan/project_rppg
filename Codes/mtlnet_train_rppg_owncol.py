@@ -40,10 +40,10 @@ import pandas as pd
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_raw'
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_demosaiced'
 
-path_dir = '../../../Dataset/Personal_collection/sub1_zahid/col1/'
+path_dir = '../../../Dataset/Personal_collection/sub2_emon/col1/'
 
-ppgtotal =  pd.read_csv(path_dir + 'test1/BVP.csv')
-EventMark = pd.read_csv(path_dir+'test1/tags.csv')
+ppgtotal =  pd.read_csv(path_dir +'emon_withglass/BVP.csv')
+EventMark = pd.read_csv(path_dir+'emon_withglass/tags.csv')
 
 dataPath = os.path.join(path_dir, '*.MOV')
 
@@ -80,7 +80,7 @@ while(cap.isOpened()):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     
     gray  = gray[:,:,1]
-    gray =  gray[10:900, 720:1500]
+    gray =  gray[0:650, 660:1200]
     
     gray = cv2.resize(gray, im_size)
     
@@ -110,16 +110,16 @@ data =  np.array(data)
 evmarknp =  EventMark.to_numpy()
 ppgnp =  ppgtotal.to_numpy()
 
-start_gap =  evmarknp[0] - 1593893213  # check from BVP.csv column name. 
+start_gap =  evmarknp[0] - 1594416869  # check from BVP.csv column name. 
 # Check video starting point from watching the frame with the light event marker 
 end_point =  evmarknp[1] - evmarknp[0]
 
 ppgnp_align =  ppgnp[np.int(start_gap*64):np.int((start_gap+end_point)*64)]
-data_align = data[306:307+np.int(end_point*30)+5]
-
+data_align = data[478:478+np.int(end_point*30)+5]
 
 
 #%% Prepare dataset for training
+
 # For subject 1,4 go till 5300
 # For suject 2 go till 6230
 # For subject 3 go till 7100
@@ -359,14 +359,21 @@ with tf.device('gpu:0/'):
     train_nn(*inarg)
 
 #%% Model weight  save
-# neural_net1.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub4RGB_raw')
+
+input("Check the name again to save as it may overload previous .....")
+
+# neural_net1.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/test1')
+
 # 
-###my_checkpoint, sub3IR, sub1IR, sub4RGB_raw', sub3RGB_raw, sub2RGB_mos_mtlbod
+
+###my_checkpoint, test1, emon_withglass
 
 #%% Load weight load
 
+input("Check before loading as it may overload previous .....")
+
 # neural_net1.load_weights(
-#         '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub4RGB_raw')
+#         '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/test1')
 
 #%% Random testing
 
@@ -386,7 +393,7 @@ rows = 3
 for j in range( 1, columns*rows +1 ):
     
     i =randint( 50, 5100)
-    i=  8000+j*10
+    i=  7000+j*10
     print(i)
     tX = np.reshape(data_align[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
@@ -397,13 +404,11 @@ for j in range( 1, columns*rows +1 ):
 
     gt = (gt-gt.min())/(gt.max()-gt.min())
     
-    
     # i  = 5+j +j
     # tX = teX1[i]    
     # gt = 0.5*(teY1[i]+1)    
     # tX = teX[i]    
     # gt = 0.5*(teY[i]+1)
-
     
     fig.add_subplot(rows, columns, j)
     tX1 = np.reshape(tX, [-1, 100,100,40])
@@ -435,7 +440,6 @@ plt.show()
 in1 = neural_net1.layers[0].layers[0](tX1).numpy() # plt.plot(in1[0,:,:,1])
 in2 = neural_net1.layers[0].layers[1](in1).numpy() # plt.plot(in2[0,:,:,1])  
 in3 = neural_net1.layers[0].layers[2](in2).numpy()
-
 in4 = neural_net1.layers[0].layers[3](in3).numpy()
 in5 = neural_net1.layers[0].layers[4](in4).numpy()
 in6 = neural_net1.layers[0].layers[5](in5).numpy()
@@ -532,10 +536,10 @@ gtV = np.zeros([85])
 
 recPPG = np.zeros([85])
 
-for j in range(8):
+for j in range(9):
     
     olap = 40
-    i = 1500+ j*olap
+    i = 1000+ j*olap
     print(i)
     tX = np.reshape(data_align[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
@@ -556,21 +560,22 @@ for j in range(8):
     
     tX1 = (tX1 - tX1.min())/(tX1.max() - tX1.min())
     
-
+    olap =  np.int(olap*64/30)
+    
     # predd = neural_net(trX1) 
     predd = neural_net1(tX1) 
     
     recPPG[-85:] = recPPG[-85:] + predd
     
-    recPPG = np.concatenate((recPPG, np.zeros([olap*2])))
+    recPPG = np.concatenate((recPPG, np.zeros([olap])))
     
     
     gtV[-85:] = gtV[-85:] + np.squeeze(gt*2-1)
-    gtV = np.concatenate((gtV, np.zeros([olap*2])))
+    gtV = np.concatenate((gtV, np.zeros([olap])))
     
     
     divVec1[-85:] = divVec1[-85:]+divVec
-    divVec1 = np.concatenate((divVec1, np.zeros([olap*2])))    
+    divVec1 = np.concatenate((divVec1, np.zeros([olap])))    
     
     
     
