@@ -40,10 +40,10 @@ import pandas as pd
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_raw'
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_demosaiced'
 
-path_dir = '../../../Dataset/Personal_collection/sub2_emon/col1/'
+path_dir = '../../../Dataset/Personal_collection/sub3_sreeni/col2/'
 
-ppgtotal =  pd.read_csv(path_dir +'emon_withglass/BVP.csv')
-EventMark = pd.read_csv(path_dir+'emon_withglass/tags.csv')
+ppgtotal =  pd.read_csv(path_dir +'sreeni2/BVP.csv')
+EventMark = pd.read_csv(path_dir+'sreeni2/tags.csv')
 
 dataPath = os.path.join(path_dir, '*.MOV')
 
@@ -80,7 +80,7 @@ while(cap.isOpened()):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     
     gray  = gray[:,:,1]
-    gray =  gray[0:650, 660:1200]
+    gray =  gray[:, 400:1630]
     
     gray = cv2.resize(gray, im_size)
     
@@ -109,14 +109,14 @@ data =  np.array(data)
 # check starting time in BVP.csv
 evmarknp =  EventMark.to_numpy()
 ppgnp =  ppgtotal.to_numpy()
+start_gap =  evmarknp[0] - 1594845887
 
-start_gap =  evmarknp[0] - 1594416869  # check from BVP.csv column name. 
+# check from BVP.csv column name. 
 # Check video starting point from watching the frame with the light event marker 
 end_point =  evmarknp[1] - evmarknp[0]
 
 ppgnp_align =  ppgnp[np.int(start_gap*64):np.int((start_gap+end_point)*64)]
-data_align = data[478:478+np.int(end_point*30)+5]
-
+data_align = data[1110:1110+np.int(end_point*30)+5]  
 
 #%% Prepare dataset for training
 
@@ -362,18 +362,18 @@ with tf.device('gpu:0/'):
 
 input("Check the name again to save as it may overload previous .....")
 
-# neural_net1.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/test1')
+# neural_net1.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/test212')
 
 # 
 
-###my_checkpoint, test1, emon_withglass
+###my_checkpoint, test1, emon_withglass, emon_withoutglass, sreeni2
 
 #%% Load weight load
 
 input("Check before loading as it may overload previous .....")
 
 # neural_net1.load_weights(
-#         '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/test1')
+#         '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sreeni2')
 
 #%% Random testing
 
@@ -498,7 +498,7 @@ plt.xlabel("training step")
 
 plt.ylabel("Errors in MSE")
 
-plt.title("Learning curves for IR (person 3)")
+plt.title("Volenteer 2 data")
 
 lst = ["Training", 'Validation']
 
@@ -536,10 +536,10 @@ gtV = np.zeros([85])
 
 recPPG = np.zeros([85])
 
-for j in range(9):
+for j in range(5):
     
     olap = 40
-    i = 1000+ j*olap
+    i = 1900+ j*olap
     print(i)
     tX = np.reshape(data_align[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
