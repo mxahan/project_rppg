@@ -42,7 +42,7 @@ subjects = ['/Subject1_still', '/Subject2_still', '/Subject3_still', '/Subject4_
 
 im_mode = ['/IR', '/RGB_raw', '/RGB_demosaiced']
 
-path_dir = path_dir + subjects[3]
+path_dir = path_dir + subjects[4]
 
 iD_ir = path_dir +im_mode[1]
 
@@ -312,11 +312,19 @@ with tf.device('gpu:0/'):
     train_nn(*inarg)
 
 #%% Model weight  save
-# neural_net1.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub4RGB_raw')
-# 
+
+
+input("Check the name again to save as it may overload previous .....")
+
+# neural_net1.save_weights(
+# '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/give_your_name')
+# # 
+
 ###my_checkpoint, sub3IR, sub1IR, sub4RGB_raw', sub3RGB_raw, sub2RGB_mos_mtlbod
 
 #%% Load weight load
+
+input("Check before loading as it may overload previous .....")
 
 # neural_net1.load_weights(
 #         '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub4RGB_raw')
@@ -482,7 +490,7 @@ recPPG = np.zeros([80])
 for j in range(6):
     
     olap = 40
-    i = 20+ j*olap
+    i = 4090+ j*olap
     print(i)
     tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
@@ -520,19 +528,39 @@ for j in range(6):
     
 
 
-fig = plt.figure(figsize=(19.20,10.80))
-plt.plot(gtV[:-80])
-plt.plot(recPPG[:-80])
-plt.legend(["Ground Truth", "Predicted"], fontsize = 40)
-plt.xlabel('time sample \n (60 samples = 1 second)', fontsize =30)
-plt.ylabel('PPG magnitude \n (Normalized voltage)', fontsize = 30)
-from matplotlib import rcParams
-rcParams['lines.linewidth'] = 4
-rcParams['lines.color'] = 'r'
-plt.xticks(fontsize = 20)
-plt.yticks(fontsize = 20)
 
-# plt.savefig('tx4to5Notrain.eps', format = 'eps', dpi= 1000)
+fig = plt.figure(figsize=(19.20,10.80))
+plt.plot(gtV[:-80], 'C2')
+plt.plot(recPPG[:-80], 'C3')
+plt.legend(["Ground Truth", "Predicted"], fontsize = 42, loc = "upper right", ncol = 2)
+plt.xlabel('time sample (60 samples = 1 second)', fontsize =40, fontweight = 'bold')
+plt.ylabel('PPG magnitude \n (Normalized voltage)', fontsize = 40, fontweight= 'bold')
+
+plt.title("PPG plot for subject 5 (Trained on subject 4)", fontsize = 40, fontweight = 'bold')
+
+plt.margins(x =0, y =0.17)
+# from matplotlib import rcParams
+# rcParams['lines.linewidth'] = 4
+# rcParams['lines.color'] = 'r'
+plt.xticks(fontsize = 35, fontweight = 'bold')
+plt.yticks(fontsize = 35, fontweight =  'bold')
+
+import matplotlib as mpl
+mpl.rcParams['lines.linewidth'] = 5
+mpl.rcParams['lines.color'] = 'r'
+mpl.rcParams['font.weight'] = 200
+plt.style.use('seaborn-whitegrid')
+
+mpl.rcParams['axes.labelsize'] = 30
+mpl.rcParams['axes.linewidth'] = 5
+mpl.rcParams['xtick.labelsize'] = 20
+mpl.rcParams['ytick.labelsize'] = 20
+mpl.rcParams['axes.edgecolor'] = 'black'
+mpl.rcParams['axes.titlesize'] = 20
+mpl.rcParams['legend.fontsize'] = 14
+
+
+plt.savefig('tx4to5NoTrain.eps', format = 'eps', dpi= 1000)
 
 
 plt.show() 

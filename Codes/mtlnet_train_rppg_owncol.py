@@ -127,7 +127,7 @@ data_align = data[1110:1110+np.int(end_point*30)+5]
 # 40 frames considered to to equivalent to 85 samples in PPg
 
 random.seed(1)
-rv = np.arange(0,5000, 1)+2000
+rv = np.arange(0,5000, 2)+2000
 np.random.shuffle(rv)
 
 
@@ -539,7 +539,7 @@ recPPG = np.zeros([85])
 for j in range(5):
     
     olap = 40
-    i = 1900+ j*olap
+    i = 8300+ j*olap
     print(i)
     tX = np.reshape(data_align[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
@@ -582,18 +582,35 @@ for j in range(5):
 
 
 fig = plt.figure(figsize=(19.20,10.80))
-plt.plot(gtV[:-80])
-plt.plot(recPPG[:-80])
-plt.legend(["Ground Truth", "Predicted"], fontsize = 40)
-plt.xlabel('time sample \n (60 samples = 1 second)', fontsize =30)
-plt.ylabel('PPG magnitude \n (Normalized voltage)', fontsize = 30)
-from matplotlib import rcParams
-rcParams['lines.linewidth'] = 4
-rcParams['lines.color'] = 'r'
-plt.xticks(fontsize = 20)
-plt.yticks(fontsize = 20)
+plt.plot(gtV[:-80], 'C2')
+plt.plot(recPPG[:-80], 'C3')
+plt.legend(["Ground Truth", "Predicted"], fontsize = 42, loc = "upper right", ncol = 2)
+plt.xlabel('time sample (60 samples = 1 second)', fontsize =40, fontweight = 'bold')
+plt.ylabel('PPG magnitude \n (Normalized voltage)', fontsize = 40, fontweight= 'bold')
 
-# plt.savefig('tx4to5Notrain.eps', format = 'eps', dpi= 1000)
+plt.title("PPG plot for the collected data", fontsize = 40, fontweight = 'bold')
 
+plt.margins(x =0, y =0.17)
+# from matplotlib import rcParams
+# rcParams['lines.linewidth'] = 4
+# rcParams['lines.color'] = 'r'
+plt.xticks(fontsize = 35, fontweight = 'bold')
+plt.yticks(fontsize = 35, fontweight =  'bold')
+
+import matplotlib as mpl
+mpl.rcParams['lines.linewidth'] = 5
+mpl.rcParams['lines.color'] = 'r'
+mpl.rcParams['font.weight'] = 200
+plt.style.use('seaborn-whitegrid')
+
+mpl.rcParams['axes.labelsize'] = 30
+mpl.rcParams['axes.linewidth'] = 5
+mpl.rcParams['xtick.labelsize'] = 20
+mpl.rcParams['ytick.labelsize'] = 20
+mpl.rcParams['axes.edgecolor'] = 'black'
+mpl.rcParams['axes.titlesize'] = 20
+mpl.rcParams['legend.fontsize'] = 14
+
+# plt.savefig('cd_sample_res.eps', format = 'eps', dpi= 500)
 
 plt.show() 
