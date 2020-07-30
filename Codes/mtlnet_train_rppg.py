@@ -42,7 +42,7 @@ subjects = ['/Subject1_still', '/Subject2_still', '/Subject3_still', '/Subject4_
 
 im_mode = ['/IR', '/RGB_raw', '/RGB_demosaiced']
 
-path_dir = path_dir + subjects[4]
+path_dir = path_dir + subjects[2]
 
 iD_ir = path_dir +im_mode[1]
 
@@ -490,7 +490,7 @@ recPPG = np.zeros([80])
 for j in range(6):
     
     olap = 40
-    i = 4090+ j*olap
+    i = 490+ j*olap
     print(i)
     tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 

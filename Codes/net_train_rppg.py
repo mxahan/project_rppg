@@ -227,13 +227,13 @@ def Val_loss (neural_net, testX, testY):
 from net_work_def import ConvNet, ConvNet1, MtlNetwork_head, MtlNetwork_body
 # power of CNN
 #%% load network
-# neural_net = ConvNet(num_classes)
+neural_net = ConvNet(num_classes)
 # Basenet = ConvNet1(num_classes) # No longer that important - too much parameters use others
 
 mtl_body =  MtlNetwork_body()
 head1 =  MtlNetwork_head(num_classes)
 
-neural_net =  tf.keras.Sequential([mtl_body, head1])
+# neural_net =  tf.keras.Sequential([mtl_body, head1])
 
 #%% Training the actual network
 # single net
@@ -251,9 +251,9 @@ with tf.device('gpu:0/'):
 # neural_net.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub3RGB_raw')
 #my_checkpoint, sub3IR, sub1IR, sub4RGB_raw'
 
-#%% Load weight load
+# #%% Load weight load
 # neural_net.load_weights(
-#       '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub4RGB_raw)
+#       '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub3IR')
 
 #%% Random testing
 # modification in network 

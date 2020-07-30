@@ -40,10 +40,10 @@ import pandas as pd
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_raw'
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_demosaiced'
 
-path_dir = '../../../Dataset/Personal_collection/sub3_sreeni/col2/'
+path_dir = '../../../Dataset/Personal_collection/sub4_rini/col1/'
 
-ppgtotal =  pd.read_csv(path_dir +'sreeni2/BVP.csv')
-EventMark = pd.read_csv(path_dir+'sreeni2/tags.csv')
+ppgtotal =  pd.read_csv(path_dir +'rini1/BVP.csv')
+EventMark = pd.read_csv(path_dir+'rini1/tags.csv')
 
 dataPath = os.path.join(path_dir, '*.MOV')
 
@@ -80,7 +80,7 @@ while(cap.isOpened()):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     
     gray  = gray[:,:,1]
-    gray =  gray[:, 400:1630]
+    gray =  gray[:, 400:1400]
     
     gray = cv2.resize(gray, im_size)
     
@@ -109,14 +109,14 @@ data =  np.array(data)
 # check starting time in BVP.csv
 evmarknp =  EventMark.to_numpy()
 ppgnp =  ppgtotal.to_numpy()
-start_gap =  evmarknp[0] - 1594845887
+start_gap =  evmarknp[1] - 1595391050
 
 # check from BVP.csv column name. 
 # Check video starting point from watching the frame with the light event marker 
-end_point =  evmarknp[1] - evmarknp[0]
+end_point =  evmarknp[2] - evmarknp[1]
 
 ppgnp_align =  ppgnp[np.int(start_gap*64):np.int((start_gap+end_point)*64)]
-data_align = data[1110:1110+np.int(end_point*30)+5]  
+data_align = data[216 : 216 +np.int(end_point*30)+5]  
 
 #%% Prepare dataset for training
 
@@ -362,7 +362,7 @@ with tf.device('gpu:0/'):
 
 input("Check the name again to save as it may overload previous .....")
 
-# neural_net1.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/test212')
+# neural_net1.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/randon change namen')
 
 # 
 
@@ -373,7 +373,7 @@ input("Check the name again to save as it may overload previous .....")
 input("Check before loading as it may overload previous .....")
 
 # neural_net1.load_weights(
-#         '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sreeni2')
+#         '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/rini1')
 
 #%% Random testing
 
@@ -511,7 +511,7 @@ fig=plt.figure(figsize=(8, 8))
 columns = 3
 rows = 3
 for i in range(1, columns*rows +1):
-    img = in2[0, :,:, 19+i]
+    img = in5[0, :,:, 40+i]
     fig.add_subplot(rows, columns, i)
     plt.imshow(img)
 
@@ -539,7 +539,7 @@ recPPG = np.zeros([85])
 for j in range(5):
     
     olap = 40
-    i = 8300+ j*olap
+    i = 7080+20 +j*olap
     print(i)
     tX = np.reshape(data_align[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 

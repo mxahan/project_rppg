@@ -19,7 +19,8 @@ class ConvBNRelu(keras.Model):
         super(ConvBNRelu, self).__init__()
         
         self.model = keras.models.Sequential([
-            layers.Conv2D(ch, kernel_size =  kernel_size, strides=strides, padding=padding),
+            layers.Conv2D(ch, kernel_size =  kernel_size, strides=strides, padding=padding,
+                          kernel_regularizer=tf.keras.regularizers.l2(0.01)),
             layers.BatchNormalization(),
             layers.ReLU()
         ])

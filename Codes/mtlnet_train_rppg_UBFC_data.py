@@ -37,7 +37,7 @@ from sklearn.model_selection import train_test_split
 
 path_dir = '../../../Dataset/datavideo/'
 
-subjects = ['/sub20_me']
+subjects = ['/sub17_me']
 
 path_dir = path_dir + subjects[0]
 
@@ -66,6 +66,7 @@ while(cap.isOpened()):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     
     gray  = gray[:,:,1]
+    gray =  gray[50:400, 250:500]
     
     gray = cv2.resize(gray, im_size)
     
@@ -123,12 +124,14 @@ rv =  np.array(rv)
 pulR = np.reshape(pulR, [pulR.shape[0],1]) # take 45 frames together
 #      #%%
 
-if 'trainX' in locals():
-    print("already exists")
-else:
-    trainX = []
-    trainY = []
+# if 'trainX' in locals():
+#     print("already exists")
+# else:
+#     trainX = []
+#     trainY = []
 
+trainX = []
+trainY = []
 
 data = data[:,:,:,np.newaxis]
 
@@ -138,22 +141,22 @@ for j,i in enumerate(rv):
     
     img = np.reshape(data[i:i+frame_cons,:,:,0], [frame_cons, *im_size])
     img = np.moveaxis(img, 0,-1)
-    print(i)
+    # print(i)
     trainX.append(img)
     i = np.int(i/(fps*0.016)) +1
-    ppg = pulR[i: i+80,0]
-    print(i)
+    ppg = pulR[i: i+85,0]
+    # print(i)
     trainY.append(ppg)
 
 
 
 #%% Some parameter definition
 
-num_classes = 80
+num_classes = 85
 num_features = 100*100*40 
 
 # Training parameters. Sunday, May 24, 2020 
-learning_rate = 0.0004 # start with 0.001
+learning_rate = 0.0008 # start with 0.001
 training_steps = 50000
 batch_size = 16
 display_step = 100
@@ -229,7 +232,7 @@ def RootMeanSquareLoss(x,y):
     # print(loss2.shape)
     
     # print(tf.reduce_mean(loss), tf.reduce_mean(loss2))
-    return loss + 2*loss2
+    return loss + 0.5*loss2
 
 
 #%%  Optimizer Definition
@@ -336,13 +339,19 @@ with tf.device('gpu:0/'):
     train_nn(*inarg)
 
 #%% Model weight  save
-# neural_net.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub4RGB_raw')
+
+input("Check the name again to save as it may overload previous .....")
+
+# neural_net.save_weights('
+# ../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub4RGB_raw')
 #my_checkpoint, sub3IR, sub1IR, sub4RGB_raw', sub3RGB_raw
 
 #%% Load weight load
 
+input("Check before loading as it may overload previous .....")
+
 # neural_net1.load_weights(
-        # '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub2RGB_raw')
+#         '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/rini1')
 
 #%% Random testing
 
@@ -358,9 +367,8 @@ fig=plt.figure(figsize=(8, 8))
 columns = 4
 rows = 4
 for j in range( 1, columns*rows +1 ):
-    
-    i =randint( 5040, 5100)
-    i=   1060 + j + j
+    # i =randint( 5040, 5100)
+    i=   1500 + j + j
     print(i)
     tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
@@ -369,14 +377,12 @@ for j in range( 1, columns*rows +1 ):
     
     gt = pulR[i: i+80,0]
     gt = (gt-gt.min())/(gt.max()-gt.min())
-    
-    
+        
     # i  = 10+j +j
     # # tX = teX[i]    
     # # gt = 0.5*(teY[i]  +1)  
     # tX = trX[i]    
     # gt = 0.5*(trY[i]+1)
-
     
     fig.add_subplot(rows, columns, j)
     tX1 = np.reshape(tX, [-1, 100,100,40])
@@ -384,7 +390,6 @@ for j in range( 1, columns*rows +1 ):
     
     tX1 = (tX1 - tX1.min())/(tX1.max() - tX1.min())
     
-
     # predd = neural_net(trX1) 
     predd = neural_net1(tX1) 
     plt.plot(predd[0])
@@ -428,7 +433,7 @@ in9 = neural_net1.layers[0].layers[8](in8).numpy()
 
 for i in range(40):
     print(i)
-    plt.imshow(trainX[8000,:,:,i])
+    plt.imshow(trainX[100,:,:,i])
     plt.show()# create target from video itself. 
 
 #%%    Normalize and split
@@ -485,28 +490,26 @@ plt.title("PPG magnitude changes")
 
 #%% Signal Reconstruction
 
-divVec = np.ones([80])
-divVec1 = np.zeros([80]) 
+divVec = np.ones([85])
+divVec1 = np.zeros([85]) 
 
-gtV = np.zeros([80])
+gtV = np.zeros([85])
 
-recPPG = np.zeros([80])
+recPPG = np.zeros([85])
 
-for j in range(6):
+for j in range(5):
     
     olap = 40
-    i = 1500+ j*olap
+    i = 1290+j*olap
     print(i)
-    
-    
-
-    
     tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
+     
     
-    i = np.int(i/(fps*0.016)) +1
-
-    gt = pulR[i:i+80]
+    
+    p_point = np.int(i/(fps*0.016)) +1
+    
+    gt = pulR[p_point: p_point+85, 0]
     gt = (gt-gt.min())/(gt.max()-gt.min())
     
     # i  = 5+j +j
@@ -520,27 +523,57 @@ for j in range(6):
     
     tX1 = (tX1 - tX1.min())/(tX1.max() - tX1.min())
     
-
+    olap =  85 # for safety
+    
     # predd = neural_net(trX1) 
     predd = neural_net1(tX1) 
     
-    recPPG[-80:] = recPPG[-80:] + predd
+    recPPG[-85:] = recPPG[-85:] + predd
     
-    recPPG = np.concatenate((recPPG, np.zeros([olap*2])))
-    
-    
-    gtV[-80:] = gtV[-80:] + np.squeeze(gt*2-1)
-    gtV = np.concatenate((gtV, np.zeros([olap*2])))
+    recPPG = np.concatenate((recPPG, np.zeros([olap])))
     
     
-    divVec1[-80:] = divVec1[-80:]+divVec
-    divVec1 = np.concatenate((divVec1, np.zeros([olap*2])))    
+    gtV[-85:] = gtV[-85:] + np.squeeze(gt*2-1)
+    gtV = np.concatenate((gtV, np.zeros([olap])))
+    
+    
+    divVec1[-85:] = divVec1[-85:]+divVec
+    divVec1 = np.concatenate((divVec1, np.zeros([olap])))    
+    
     
     
 
-plt.plot(gtV)
-plt.plot(recPPG)
-plt.legend(["Ground Truth", "Predicted"])
-plt.xlabel('time')
-plt.ylabel('magnitude')
+
+fig = plt.figure(figsize=(19.20,10.80))
+plt.plot(gtV[:-80], 'C2')
+plt.plot(recPPG[:-80], 'C3')
+plt.legend(["Ground Truth", "Predicted"], fontsize = 42, loc = "upper right", ncol = 2)
+plt.xlabel('time sample (64 samples = 1 second)', fontsize =40, fontweight = 'bold')
+plt.ylabel('PPG magnitude \n (Normalized voltage)', fontsize = 40, fontweight= 'bold')
+
+plt.title("PPG plot for the UBFC-rPPG dataset", fontsize = 40, fontweight = 'bold')
+
+plt.margins(x =0, y =0.17)
+# from matplotlib import rcParams
+# rcParams['lines.linewidth'] = 4
+# rcParams['lines.color'] = 'r'
+plt.xticks(fontsize = 35, fontweight = 'bold')
+plt.yticks(fontsize = 35, fontweight =  'bold')
+
+import matplotlib as mpl
+mpl.rcParams['lines.linewidth'] = 5
+mpl.rcParams['lines.color'] = 'r'
+mpl.rcParams['font.weight'] = 200
+plt.style.use('seaborn-whitegrid')
+
+mpl.rcParams['axes.labelsize'] = 30
+mpl.rcParams['axes.linewidth'] = 5
+mpl.rcParams['xtick.labelsize'] = 20
+mpl.rcParams['ytick.labelsize'] = 20
+mpl.rcParams['axes.edgecolor'] = 'black'
+mpl.rcParams['axes.titlesize'] = 20
+mpl.rcParams['legend.fontsize'] = 14
+
+plt.savefig('ubfc_fail_reco.eps', format = 'eps', dpi= 500)
+
 plt.show() 
