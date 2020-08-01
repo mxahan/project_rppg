@@ -109,7 +109,7 @@ data =  np.array(data)
 # check starting time in BVP.csv
 evmarknp =  EventMark.to_numpy()
 ppgnp =  ppgtotal.to_numpy()
-start_gap =  evmarknp[1] - 1595391050
+start_gap =  evmarknp[1] -  1595391050
 
 # check from BVP.csv column name. 
 # Check video starting point from watching the frame with the light event marker 
@@ -127,7 +127,7 @@ data_align = data[216 : 216 +np.int(end_point*30)+5]
 # 40 frames considered to to equivalent to 85 samples in PPg
 
 random.seed(1)
-rv = np.arange(0,5000, 2)+2000
+rv = np.arange(0,4000, 2)+2000
 np.random.shuffle(rv)
 
 
@@ -254,43 +254,43 @@ def RootMeanSquareLoss(x,y):
 optimizer  = tf.optimizers.SGD(learning_rate*2)
 optimizer1 = tf.optimizers.SGD(learning_rate/2)
 
-# def run_optimization(neural_net, x,y):    
-#     with tf.GradientTape() as g:
-#         pred =  neural_net(x, training = True)
-#         loss =  RootMeanSquareLoss(y, pred)  # change for mtl
-        
-    
-    
-#     convtrain_variables =  neural_net.layers[0].trainable_variables
-#     fcntrain_variables =  neural_net.layers[1].trainable_variables
-    
-#     # trainable_variables =  neural_net.trainable_variables[:-6] 
-#     # also there are other ways to update the gradient it would give the same results
-#     # trainable_var is a list, select your intended layers: use append
-    
-#     gradients =  g.gradient(loss, convtrain_variables+fcntrain_variables) 
-#     # gradient and trainable variables are list
-    
-#     grads1 =  gradients[:len(convtrain_variables)]
-#     grads2 = gradients[len(convtrain_variables):]
-    
-#     optimizer.apply_gradients(zip(grads1, convtrain_variables))
-#     optimizer1.apply_gradients(zip(grads2, fcntrain_variables))
-    
-    # Or the following section 
-    
-def run_optimization(neural_net, x,y):    # for the second network varies in head
+def run_optimization(neural_net, x,y):    
     with tf.GradientTape() as g:
-        pred =  neural_net(x, training = True) 
+        pred =  neural_net(x, training = True)
         loss =  RootMeanSquareLoss(y, pred)  # change for mtl
         
     
-    trainable_variables =  neural_net.trainable_variables
+    
+    convtrain_variables =  neural_net.layers[0].trainable_variables
+    fcntrain_variables =  neural_net.layers[1].trainable_variables
+    
     # trainable_variables =  neural_net.trainable_variables[:-6] 
     # also there are other ways to update the gradient it would give the same results
-    # trainable_var is a list, select your intended layers: use append  
-    gradients =  g.gradient(loss, trainable_variables)  
-    optimizer.apply_gradients(zip(gradients, trainable_variables))
+    # trainable_var is a list, select your intended layers: use append
+    
+    gradients =  g.gradient(loss, convtrain_variables+fcntrain_variables) 
+    # gradient and trainable variables are list
+    
+    grads1 =  gradients[:len(convtrain_variables)]
+    grads2 = gradients[len(convtrain_variables):]
+    
+    optimizer.apply_gradients(zip(grads1, convtrain_variables))
+    optimizer1.apply_gradients(zip(grads2, fcntrain_variables))
+    
+    # # # # Or the following section 
+    
+# def run_optimization(neural_net, x,y):    # for the second network varies in head
+#     with tf.GradientTape() as g:
+#         pred =  neural_net(x, training = True) 
+#         loss =  RootMeanSquareLoss(y, pred)  # change for mtl
+        
+    
+#     trainable_variables =  neural_net.trainable_variables
+#     # trainable_variables =  neural_net.trainable_variables[:-6] 
+#     # also there are other ways to update the gradient it would give the same results
+#     # trainable_var is a list, select your intended layers: use append  
+#     gradients =  g.gradient(loss, trainable_variables)  
+#     optimizer.apply_gradients(zip(gradients, trainable_variables))
 
 
  
@@ -310,10 +310,10 @@ def train_nn(neural_net1, neural_net2, train_data):
         
         
         
-        # i = randint(0,trX1.shape[0]-20)
-        # batch_x1 = tf.convert_to_tensor(trX1[i:i+batch_size])
-        # batch_y1 = tf.convert_to_tensor(trY1[i:i+batch_size])
-        # run_optimization(neural_net2, batch_x1, batch_y1)
+        i = randint(0,trX1.shape[0]-20)
+        batch_x1 = tf.convert_to_tensor(trX1[i:i+batch_size])
+        batch_y1 = tf.convert_to_tensor(trY1[i:i+batch_size])
+        run_optimization(neural_net2, batch_x1, batch_y1)
         
         
         if step % (display_step*2) == 0:
@@ -362,7 +362,7 @@ with tf.device('gpu:0/'):
 
 input("Check the name again to save as it may overload previous .....")
 
-# neural_net1.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/randon change namen')
+# neural_net1.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/randon change name')
 
 # 
 
@@ -372,8 +372,8 @@ input("Check the name again to save as it may overload previous .....")
 
 input("Check before loading as it may overload previous .....")
 
-# neural_net1.load_weights(
-#         '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/rini1')
+neural_net3.load_weights(
+        '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/rini1')
 
 #%% Random testing
 
@@ -490,6 +490,8 @@ tr_l = np.array(train_loss)
 
 val_l = np.array(val_loss)
 
+fig = plt.figure(figsize=(19.20,10.80))
+
 # For suject 2 go till 6230
 # For subject 3 go till 7100
 plt.plot(tr_l, 'r', val_l, 'g')
@@ -498,12 +500,15 @@ plt.xlabel("training step")
 
 plt.ylabel("Errors in MSE")
 
-plt.title("Volenteer 2 data")
+plt.title("Sample Learning Curve")
 
 lst = ["Training", 'Validation']
 
+
 plt.legend(lst)
 
+
+plt.savefig('learning_curve.eps', format = 'eps', dpi= 1000)
 
 #%% Better visualization
 
@@ -539,7 +544,7 @@ recPPG = np.zeros([85])
 for j in range(5):
     
     olap = 40
-    i = 7080+20 +j*olap
+    i = 7200 +j*olap
     print(i)
     tX = np.reshape(data_align[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
@@ -563,7 +568,7 @@ for j in range(5):
     olap =  np.int(olap*64/30)
     
     # predd = neural_net(trX1) 
-    predd = neural_net1(tX1) 
+    predd = neural_net2(tX1) 
     
     recPPG[-85:] = recPPG[-85:] + predd
     
