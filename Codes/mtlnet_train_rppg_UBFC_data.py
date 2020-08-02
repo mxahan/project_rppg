@@ -37,7 +37,7 @@ from sklearn.model_selection import train_test_split
 
 path_dir = '../../../Dataset/datavideo/'
 
-subjects = ['/sub16_me']
+subjects = ['/sub2_me']
 
 path_dir = path_dir + subjects[0]
 
@@ -66,7 +66,7 @@ while(cap.isOpened()):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     
     gray  = gray[:,:,1]
-    gray =  gray[150:400, 300:500]
+    gray =  gray[170:400, 220:400]
     
     gray = cv2.resize(gray, im_size)
     
@@ -333,7 +333,7 @@ neural_net2 =  tf.keras.Sequential([mtl_body, head2])
 # inarg = (neural_net, train_data)
 # multi-task net
 
-inarg = (neural_net1,neural_net2, train_data)
+inarg = (neural_net1, neural_net2, train_data)
 
 with tf.device('gpu:0/'):
     train_nn(*inarg)
@@ -497,10 +497,10 @@ gtV = np.zeros([85])
 
 recPPG = np.zeros([85])
 
-for j in range(5):
+for j in range(4):
     
     olap = 40
-    i = 1299+j*olap
+    i = 1590+j*olap
     print(i)
     tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
