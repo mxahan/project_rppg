@@ -37,7 +37,7 @@ from sklearn.model_selection import train_test_split
 
 path_dir = '../../../Dataset/datavideo/'
 
-subjects = ['/sub2_me']
+subjects = ['/sub20_me']
 
 path_dir = path_dir + subjects[0]
 
@@ -66,7 +66,7 @@ while(cap.isOpened()):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     
     gray  = gray[:,:,1]
-    gray =  gray[170:400, 220:400]
+    gray =  gray[80:400, 200:420]
     
     gray = cv2.resize(gray, im_size)
     
@@ -500,7 +500,7 @@ recPPG = np.zeros([85])
 for j in range(4):
     
     olap = 40
-    i = 1590+j*olap
+    i = 1950 + j*olap
     print(i)
     tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
