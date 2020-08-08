@@ -273,7 +273,7 @@ ax2.set_yticklabels(xlabels, rotation=90, fontsize=35)
 
 plt.legend(loc='upper right', ncol=1, fontsize=30)
 
-plt.savefig('bar_chart_sample1.eps', format = 'eps', dpi= 500, bbox_inches="tight")
+# plt.savefig('bar_chart_sample1.eps', format = 'eps', dpi= 500, bbox_inches="tight")
 
 plt.show()
 
@@ -338,7 +338,7 @@ ax1.set_yticklabels(xlabels, rotation=90, fontsize=35)
 
 plt.legend(loc='best', ncol=3, fontsize=30)
 
-plt.savefig('bar_chart_sample2.eps', format = 'eps', dpi= 500, bbox_inches="tight")
+# plt.savefig('bar_chart_sample2.eps', format = 'eps', dpi= 500, bbox_inches="tight")
 
 plt.show()
 
