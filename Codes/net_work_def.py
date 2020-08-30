@@ -309,7 +309,7 @@ class MtlNetwork(Model): # Vitamon network except inception layer
 
 # MTL body head
 
-# Network Option  2 
+# Actual Network starts from Here. 
 
 class MtlNetwork_body(Model): # Vitamon network except inception layer
     # Set layers.
