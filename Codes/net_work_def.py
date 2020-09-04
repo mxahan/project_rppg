@@ -70,7 +70,8 @@ class InceptMod(keras.Model):
         
         return x
     
-## Initial Network works fine but 41M  parameters the problem with dense layers
+#%% Initial Network works fine but 41M  parameters the problem with dense layers
+
 class ConvNet1(Model): # Vitamon network except inception layer
     # Set layers.
     def __init__(self, num_classes):
@@ -309,8 +310,9 @@ class MtlNetwork(Model): # Vitamon network except inception layer
 
 # MTL body head
 
-# Actual Network starts from Here. 
+#%% Actual Network starts from Here. 
 
+# Body network
 class MtlNetwork_body(Model): # Vitamon network except inception layer
     # Set layers.
     def __init__(self):
@@ -385,6 +387,7 @@ class MtlNetwork_body(Model): # Vitamon network except inception layer
 
 
 
+# Head network
 
 class MtlNetwork_head(Model): # Vitamon network except inception layer
     # Set layers.

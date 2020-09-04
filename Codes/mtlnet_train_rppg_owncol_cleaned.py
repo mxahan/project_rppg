@@ -394,7 +394,7 @@ logger.info(
     train_loss: {tr_err}, Subject: {Person}'''.format(**kwargs))
 
 
-#%% Random testing
+#%% Random test from different starting point
 
 # modification in network 
 
@@ -466,7 +466,11 @@ in7 = neural_net1.layers[0].layers[6](in6).numpy()
 in8 = neural_net1.layers[0].layers[7](in7).numpy()
 in9 = neural_net1.layers[0].layers[8](in8).numpy()
 
+
+# alternative neural_net1.layers[0].layers[0].model.layers[2]  or use the name like conv1, ..
 # in3 = neural_net.layers[2](in2).numpy()
+
+# neural_net1.layers[0].layers[0].model.layers[0].weights or .bias
 
 # ##we can also select the model inside the inside layer
 
@@ -482,7 +486,7 @@ in9 = neural_net1.layers[0].layers[8](in8).numpy()
 #neural_net.layers[0].layers[0].layers[0].weights
 # Keep track what you did in call and what you have in model layer definition
 
-#%%  Extras
+#%%  Video Sequence check
 
 for i in range(40):
     print(i)
@@ -498,7 +502,7 @@ trainY = trainY - trainY.min(axis = 1)[:, np.newaxis]
 # trainY = trainY/(trainY.max(axis = 1)[:,np.newaxis]
     
     
-#%% Get_weights and Set_weights
+#%% Get_weights and Set_weights from trained network
 
 # neural_net.layers[7].set_weights(Basenet.layers[7].get_weights())
 #weightss = np.array(neural_net.layers[0].layers[0].layers[0].weights)
@@ -551,7 +555,7 @@ plt.xlabel('time')
 plt.ylabel('PPG magnitude')
 plt.title("PPG magnitude changes")
 
-#%% Signal Reconstruction
+#%% Signal Reconstruction in the test time 
 
 divVec = np.ones([85])
 divVec1 = np.zeros([85]) 
