@@ -502,7 +502,7 @@ trainY = trainY - trainY.min(axis = 1)[:, np.newaxis]
 # trainY = trainY/(trainY.max(axis = 1)[:,np.newaxis]
     
     
-#%% Get_weights and Set_weights from trained network
+#%%    Get_weights and Set_weights from trained network
 
 # neural_net.layers[7].set_weights(Basenet.layers[7].get_weights())
 #weightss = np.array(neural_net.layers[0].layers[0].layers[0].weights)
@@ -511,34 +511,30 @@ trainY = trainY - trainY.min(axis = 1)[:, np.newaxis]
 
 tr_l = np.array(train_loss)
 
+
 val_l = np.array(val_loss)
 
 fig = plt.figure(figsize=(19.20,10.80))
-
 # For suject 2 go till 6230
 # For subject 3 go till 7100
 plt.plot(tr_l, 'r', val_l, 'g')
 
-plt.xlabel("training step")
-
-plt.ylabel("Errors in MSE")
-
-plt.title("Sample Learning Curve")
+plt.xlabel( "training step" )
+plt.ylabel( "Errors in MSE" )
+plt.title( "Sample Learning Curve" )
 
 lst = ["Training", 'Validation']
 
-
 plt.legend(lst)
-
 
 plt.savefig('learning_curve.eps', format = 'eps', dpi= 1000)
 
-#%% Better visualization
+#%%  Better visualization
 
 fig=plt.figure(figsize=(8, 8))
 columns = 3
 rows = 3
-for i in range(1, columns*rows +1):
+for i in range(1, columns*rows + 1):
     img = in5[0, :,:, 40+i]
     fig.add_subplot(rows, columns, i)
     plt.imshow(img)
@@ -559,9 +555,7 @@ plt.title("PPG magnitude changes")
 
 divVec = np.ones([85])
 divVec1 = np.zeros([85]) 
-
 gtV = np.zeros([85])
-
 recPPG = np.zeros([85])
 
 for j in range(5):
@@ -584,14 +578,12 @@ for j in range(5):
     # gt = 0.5*(teY[i]+1)    
 
     tX1 = np.reshape(tX, [-1, 100,100,40])
-
-    
     tX1 = (tX1 - tX1.min())/(tX1.max() - tX1.min())
     
     olap =  np.int(olap*64/30)
     
     # predd = neural_net(trX1) 
-    predd = neural_net2(tX1) 
+    predd = neural_net2(tX1)
     
     recPPG[-85:] = recPPG[-85:] + predd
     
@@ -603,16 +595,13 @@ for j in range(5):
     
     
     divVec1[-85:] = divVec1[-85:]+divVec
-    divVec1 = np.concatenate((divVec1, np.zeros([olap])))    
+    divVec1 = np.concatenate((divVec1, np.zeros([olap])))
     
-    
-    
-
 
 fig = plt.figure(figsize=(19.20,10.80))
 plt.plot(gtV[:-80], 'C2')
 plt.plot(recPPG[:-80], 'C3')
-plt.legend(["Ground Truth", "Predicted"], fontsize = 42, loc = "upper right", ncol = 2)
+plt.legend(["Ground Truth", "Predicted"], fontsize = 42, loc = "upper right", ncol = 2) 
 plt.xlabel('time sample (60 samples = 1 second)', fontsize =40, fontweight = 'bold')
 plt.ylabel('PPG magnitude \n (Normalized voltage)', fontsize = 40, fontweight= 'bold')
 
@@ -641,4 +630,4 @@ mpl.rcParams['legend.fontsize'] = 14
 
 # plt.savefig('cd_sample_res.eps', format = 'eps', dpi= 500)
 
-plt.show() 
+plt.show()
