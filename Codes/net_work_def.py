@@ -409,3 +409,10 @@ class MtlNetwork_head(Model): # Vitamon network except inception layer
         x = tf.nn.tanh(x)
         # print(x3.shape)
         return x
+    
+    
+class VitaMon1(Model):
+    def __init__(self, num_classes):
+        super(VitaMon1, self).__init__()
+    def call(self, x, training=False ):
+        return x

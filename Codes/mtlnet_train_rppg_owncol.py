@@ -550,7 +550,7 @@ recPPG = np.zeros([85])
 for j in range(1):
     
     olap = 40
-    i = 9320 +j*olap
+    i = 7582 +j*olap
     print(i)
     tX = np.reshape(data_align[i:i+40:1,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
@@ -629,11 +629,73 @@ plt.show()
 #%% Tensorflow lite conversion
 new_path =  os.path.join("../../../Dataset/Merl_Tim/NNSave/SavedWM")
 
-neural_net1.set_inputs(tX1) 
+neural_net1._set_inputs(tX1) 
 
-tf.saved_model.save(neural_net1, new_path)
+tf.saved_model.save(neural_net2, new_path)# this guy not works???
+neural_net1.save(new_path)
+# or  tf.keras.models.save_model(neural_net1, new_path)
+# save as assets, variable, .pb file extension 
+
 
 conMod = tf.lite.TFLiteConverter.from_saved_model(new_path)
 
 tfLitMod =  conMod.convert()
 
+neural_net1.layers[0].summary()
+
+#%% lite model save both all and FP16
+
+import pathlib
+
+tflite_models_dir = pathlib.Path("../../../Dataset/Merl_Tim/NNSave/SavedWM")
+tflite_models_dir.mkdir(exist_ok=True, parents=True)
+
+tflite_model_file = tflite_models_dir/"masud_lite.tflite"
+tflite_model_file.write_bytes(tfLitMod)
+
+
+conMod.optimizations = [tf.lite.Optimize.DEFAULT]
+conMod.target_spec.supported_types = [tf.float16]
+
+tflite_fp16_model = conMod.convert()
+tflite_model_fp16_file = tflite_models_dir/"masud_lit_f16.tflite"
+tflite_model_fp16_file.write_bytes(tflite_fp16_model)
+
+
+#%% inference
+
+interpreter = tf.lite.Interpreter(model_path=str(tflite_model_file))
+interpreter.allocate_tensors()
+
+# see inside
+print(interpreter.get_input_details())
+
+print(interpreter.get_output_details())
+
+
+interpreter.set_tensor(60, tX1.astype(np.float32))
+
+interpreter.invoke()
+predictions = interpreter.get_tensor(0)
+
+plt.plot(predictions.reshape([85]))
+plt.plot(recPPG[:-80], 'C3')
+
+#%% Fp16 Inference
+
+interpreter = tf.lite.Interpreter(model_path=str(tflite_model_fp16_file))
+interpreter.allocate_tensors()
+
+# see inside
+print(interpreter.get_input_details())
+
+print(interpreter.get_output_details())
+
+
+interpreter.set_tensor(60, tX1.astype(np.float32))
+
+interpreter.invoke()
+predictions = interpreter.get_tensor(0)
+
+plt.plot(predictions.reshape([85]))
+plt.plot(recPPG[:-80], 'C3')
