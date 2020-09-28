@@ -345,7 +345,7 @@ class MtlNetwork_body(Model): # Vitamon network except inception layer
         
         self.fc1_1 = layers.Dense(512, activation=tf.nn.relu)
         
-        self.fc1_2 = layers.Dense(512, activation=tf.nn.relu)
+        self.fc1_2 = layers.Dense(128, activation=tf.nn.relu) # changed from 512
 
 
     # Set forward pass.
@@ -371,6 +371,13 @@ class MtlNetwork_body(Model): # Vitamon network except inception layer
         x = self.incept2(x, training = training)
         
         x = self.avgpool2(x)
+        # later added        
+        x = self.avgpool2(x)
+        
+        
+        x = self.avgpool2(x)
+        # later added        
+
         # print(x.shape)
         
         x = self.flatten(x)
@@ -410,9 +417,99 @@ class MtlNetwork_head(Model): # Vitamon network except inception layer
         # print(x3.shape)
         return x
     
-    
+
+#%% 
+# with umbc vpn
+# https://gpvpn.umbc.edu/https/dl.acm.org/doi/pdf/10.1145/3356250.3360036
+
 class VitaMon1(Model):
     def __init__(self, num_classes):
         super(VitaMon1, self).__init__()
+        self.conv1 =  layers.Conv2D(32, kernel_size = 3, strides=1, padding="same",
+                          kernel_regularizer=tf.keras.regularizers.l2(0.01))
+        self.conv2 =  layers.Conv2D(32, kernel_size = 3, strides=1, padding="same",
+                  kernel_regularizer=tf.keras.regularizers.l2(0.01))
+        self.conv3 =  layers.Conv2D(64, kernel_size = 3, strides=1, padding="same",
+                  kernel_regularizer=tf.keras.regularizers.l2(0.01))
+        self.maxpool1 = layers.MaxPool2D(2, strides=2)
+        self.conv4 =  layers.Conv2D(80, kernel_size = 3, strides=1, padding="same",
+                  kernel_regularizer=tf.keras.regularizers.l2(0.01))
+        self.conv5 =  layers.Conv2D(192, kernel_size = 3, strides=1, padding="same",
+                  kernel_regularizer=tf.keras.regularizers.l2(0.01))
+        
+        self.incept1 = InceptMod(ch = 16, strides = 1)
+        self.avgpool1 = layers.AveragePooling2D(2, strides= 2)
+        self.flatten = layers.Flatten()
+
+        self.drop1 =  layers.Dropout(0.5)
+        self.out1 = layers.Dense(num_classes)
+        
+        
     def call(self, x, training=False ):
+        x = tf.reshape(x, [-1,100,100,40])
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        
+        x = self.maxpool1(x)
+        
+        x = self.conv4(x)
+        x = self.conv5(x)
+        
+        print(x.shape)
+        x = self.maxpool1(x)
+        
+        x = self.incept1(x)
+        
+        x = self.avgpool1(x)
+        x = self.avgpool1(x)
+        x = self.avgpool1(x)
+        x = self.avgpool1(x)
+        
+        x = self.drop1(x)
+        
+        x = self.flatten(x)
+        
+        x = self.out1(x)
+                
         return x
+    
+    
+
+class VitaMon2(Model):
+    def __init__(self, num_classes):
+        super(VitaMon1, self).__init__()
+        self.conv1 =  layers.Conv2D(32, kernel_size = 3, strides=1, padding="same",
+                          kernel_regularizer=tf.keras.regularizers.l2(0.01))
+        self.conv2 =  layers.Conv2D(32, kernel_size = 3, strides=1, padding="same",
+                  kernel_regularizer=tf.keras.regularizers.l2(0.01))
+        self.conv3 =  layers.Conv2D(64, kernel_size = 3, strides=1, padding="same",
+                  kernel_regularizer=tf.keras.regularizers.l2(0.01))
+
+        self.avgpool1 = layers.AveragePooling2D(2, strides= 2)
+        self.flatten = layers.Flatten()
+
+        self.drop1 =  layers.Dropout(0.5)
+        self.out1 = layers.Dense(num_classes)
+        
+        
+    def call(self, x, training=False ):
+        x = tf.reshape(x, [-1,100,100,11])
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        
+
+        x = self.avgpool1(x)
+        x = self.avgpool1(x)
+        x = self.avgpool1(x)
+        x = self.avgpool1(x)
+        
+        x = self.drop1(x)
+        
+        x = self.flatten(x)
+        
+        x = self.out1(x)
+                
+        return x
+

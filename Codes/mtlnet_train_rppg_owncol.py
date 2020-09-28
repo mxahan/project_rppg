@@ -40,10 +40,10 @@ import pandas as pd
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_raw'
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_demosaiced'
 
-path_dir = '../../../Dataset/Personal_collection/sub7_masud/col1/'
+path_dir = '../../../Dataset/Personal_collection/sub2_emon/col3/'
 
-ppgtotal =  pd.read_csv(path_dir +'masud/BVP.csv')
-EventMark = pd.read_csv(path_dir+'masud/tags.csv')
+ppgtotal =  pd.read_csv(path_dir +'Emon_lab/BVP.csv')
+EventMark = pd.read_csv(path_dir+'Emon_lab/tags.csv')
 
 dataPath = os.path.join(path_dir, '*.MOV')
 
@@ -80,8 +80,8 @@ while(cap.isOpened()):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     
     gray  = gray[:,:,1]
-    gray =  gray[0:1000, 400:1400]
-    
+    gray =  gray[:900, 600:1500]
+   
     gray = cv2.resize(gray, im_size)
     
     # pdb.set_trace()
@@ -109,14 +109,15 @@ data =  np.array(data)
 # check starting time in BVP.csv
 evmarknp =  EventMark.to_numpy()
 ppgnp =  ppgtotal.to_numpy()
-start_gap =  evmarknp[0] -   1599770587
+start_gap =  evmarknp[0] -  1599849555
 
 # check from BVP.csv column name. 
 # Check video starting point from watching the frame with the light event marker 
 end_point =  evmarknp[1] - evmarknp[0]
 
 ppgnp_align =  ppgnp[np.int(start_gap*64):np.int((start_gap+end_point)*64)]
-data_align = data[676 : 676 +np.int(end_point*30)+5]  
+
+data_align = data[176 : 176 +np.int(end_point*30)+5]  
 
 #%% Prepare dataset for training
 
@@ -365,11 +366,11 @@ with tf.device('gpu:0/'):
 
 input("Check the name again to save as it may overload previous .....")
 
-# neural_net1.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/random_name adf')
+# neural_net1.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/random name selection')
 
 # 
 
-###my_checkpoint, test1, emon_withglass, emon_withoutglass, sreeni2, emon_lab, avijoy, masud
+###my_checkpoint, test1, emon_withglass, emon_withoutgss, sreeni2, emon_lab, avijoy, masud
 
 
 #%% Load weight load
@@ -377,7 +378,7 @@ input("Check the name again to save as it may overload previous .....")
 input("Check before loading as it may overload previous .....")
 
 # neural_net1.load_weights(
-#         '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/masud')
+#         '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/emon_lab')
 
 
 #%% Random testing
@@ -531,8 +532,8 @@ for i in range(1, columns*rows +1):
 
 
 
-#%% PPG visulization
-
+#%% PPG and network visulization
+neural_net1.layers[0].summary()
 plt.plot(pulR[500:4000])
 plt.xlabel('time')
 plt.ylabel('PPG magnitude')
@@ -547,10 +548,10 @@ gtV = np.zeros([85])
 
 recPPG = np.zeros([85])
 
-for j in range(1):
+for j in range(6):
     
     olap = 40
-    i = 7582 +j*olap
+    i = 7095 +j*olap
     print(i)
     tX = np.reshape(data_align[i:i+40:1,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
