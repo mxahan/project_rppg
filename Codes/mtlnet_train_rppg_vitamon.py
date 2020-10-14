@@ -28,114 +28,73 @@ import random
 from random import seed, randint
 
 from sklearn.model_selection import train_test_split
-
-import pandas as pd
 #%%  Data Load Parts
-
-
-
 
 # load Pathdir
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/IR'
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_raw'
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_demosaiced'
 
-path_dir = '../../../Dataset/Personal_collection/sub8_neha/col1/'
+path_dir = '../../../Dataset/Merl_Tim'
 
-ppgtotal =  pd.read_csv(path_dir +'neha/BVP.csv')
-EventMark = pd.read_csv(path_dir+'neha/tags.csv')
+subjects = ['/Subject1_still', '/Subject2_still', '/Subject3_still', '/Subject4_still',
+            '/Subject5_still', '/Subject6_still', '/Subject7_still', '/Subject8_still']
 
-dataPath = os.path.join(path_dir, '*.MOV')
+im_mode = ['/IR', '/RGB_raw', '/RGB_demosaiced']
+
+path_dir = path_dir + subjects[2]
+
+iD_ir = path_dir +im_mode[1]
+
+dataPath = os.path.join(iD_ir, '*.pgm')
 
 files = glob.glob(dataPath)  # care about the serialization
 # end load pathdir
 list.sort(files) # serialing the data
 
-# Take time stamp and multiple by 64. Take starting time of the BVP file, 
-# subtract the tags.csv from the BVP start time, multiply by 64 to get the sample number. 
-
+print((len(files)-5000)/30)
+# load images  from 1 subject
 #%% Load Video and load Mat file
-
-# find start position by pressing the key position in empatica
-# test1.MOV led appear at the 307th frame.
-
-# perfect alignment! checked by (time_eM_last-time_eM_first)*30+start_press_sample  should
-# give the end press in video
-
-
 
 data = []
 im_size = (100,100)
 
-cap = cv2.VideoCapture(files[0])
-
-import pdb
-
-while(cap.isOpened()):
-    ret, frame = cap.read()
+i = 0
+for f1 in files:  # make sure to stack serially
+    if i%1000==0:
+        print(f1)
+    img =  cv2.resize(cv2.imread(f1)[:,:,1], im_size)
+    img = img[:,:,np.newaxis]
+    data.append(img)
+    i+=1
     
-    if ret==False:
-        break
-
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    
-    gray  = gray[:,:,1]
-    gray =  gray[200:950, 650:1350]
-   
-    gray = cv2.resize(gray, im_size)
-    
-    # pdb.set_trace()
-   
-    data.append(gray)
-    
-    cv2.imshow('frame', gray)
-    
-    
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-
-
-fps = cap.get(cv2.CAP_PROP_FPS)
-    
-cap.release()
-cv2.destroyAllWindows()
 data =  np.array(data)
+    
 
-#%% PPG signal selection and alignment. 
-# The starting points are the crucial, 
-# this section needs select both the sratrting of video and the ppg point
 
-# check fps
-# check starting time in BVP.csv
-evmarknp =  EventMark.to_numpy()
-ppgnp =  ppgtotal.to_numpy()
-start_gap =  evmarknp[1] -  1601323050
+x = loadmat(path_dir +'/PulseOX/pulseOx.mat')
 
-# check from BVP.csv column name. 
-# Check video starting point from watching the frame with the light event marker 
+pulseoxR = np.squeeze(x['pulseOxRecord'])
 
-end_point =  evmarknp[2] - evmarknp[1]
-
-ppgnp_align =  ppgnp[np.int(start_gap*64):np.int((start_gap+end_point)*64)]
-
-data_align = data[259 : 259 +np.int(end_point*30)+5]  
-
+pulR = []
+for i in range(pulseoxR.shape[0]):
+    pulR.append(pulseoxR[i][0][0])  # check the inside shape sub 5 cause error
+    
+pulR = np.array(pulR)
+    
 #%% Prepare dataset for training
-
 # For subject 1,4 go till 5300
 # For suject 2 go till 6230
 # For subject 3 go till 7100
 
-# 40 frames considered to to equivalent to 85 samples in PPg
-
 random.seed(1)
-rv = np.arange(0,5000, 1)+1000
+rv = np.arange(0,2000, 1)
 np.random.shuffle(rv)
 
 
 # rv = [randint(0, 5300) for _ in range(5000)] ## random removal 
 rv =  np.array(rv)
-pulR = np.reshape(ppgnp_align, [ppgnp_align.shape[0],1]) # take 45 frames together
+pulR = np.reshape(pulR, [pulR.shape[0],1]) # take 45 frames together
 #      #%%
 
 if 'trainX' in locals():
@@ -145,30 +104,27 @@ else:
     trainY = []
 
 
-data_align = data_align[:,:,:,np.newaxis]
 
 frame_cons = 40 # how many frame to consider at a time
 
 for j,i in enumerate(rv):
     
-    img = np.reshape(data_align[i:i+frame_cons,:,:,0], [frame_cons, *im_size])
+    img = np.reshape(data[i:i+frame_cons,:,:,0], [frame_cons, *im_size])
     img = np.moveaxis(img, 0,-1)
     trainX.append(img)
     
-    p_point = np.int(np.round(i*64/30))
-    
-    ppg = pulR[p_point: p_point+85, 0]
+    ppg = pulR[2*i: 2*i+80,0]
     trainY.append(ppg)
 
 
 
 #%% Some parameter definition
 
-num_classes = 85
+num_classes = 80 
 num_features = 100*100*40 
 
 # Training parameters. Sunday, May 24, 2020 
-learning_rate = 0.0005 # start with 0.001
+learning_rate = 0.0008 # start with 0.001
 training_steps = 50000
 batch_size = 16
 display_step = 100
@@ -224,7 +180,7 @@ trainX = (trainX-trainX.min())
 
 trainX = trainX/ trainX.max()
 #trainY = (trainY-trainY.min())/(trainY.max()-trainY.min())
-# bad idea as global minima and outlines
+ # bad idea as global minima and outlines
 
 trX1, teX1, trY1, teY1 = train_test_split(trainX , trainY, 
                                       test_size = .1, random_state = 42)
@@ -237,23 +193,21 @@ trX1, teX1, trY1, teY1 = train_test_split(trainX , trainY,
 
 
 #%% Loss function  
-
+# import pdb
 
 def RootMeanSquareLoss(x,y):
-    
-    # pdb.set_trace()  
     loss = tf.keras.losses.MSE(y_true = y, y_pred =x)  # initial one
     #return tf.reduce_mean(loss)  # some other shape similarity
-     
+    # pdb.set_trace()   
     loss2 = tf.reduce_mean((tf.math.abs(tf.math.sign(y))-tf.math.sign(tf.math.multiply(x,y))),axis = -1)
     # print(loss2.shape)
     
     # print(tf.reduce_mean(loss), tf.reduce_mean(loss2))
-    return loss + 0.5*loss2
+    return loss + 0.25*loss2
 
 
 #%%  Optimizer Definition
-optimizer  = tf.optimizers.SGD(learning_rate)
+optimizer = tf.optimizers.SGD(learning_rate*2)
 optimizer1 = tf.optimizers.SGD(learning_rate/2)
 
 # def run_optimization(neural_net, x,y):    
@@ -279,7 +233,7 @@ optimizer1 = tf.optimizers.SGD(learning_rate/2)
 #     optimizer.apply_gradients(zip(grads1, convtrain_variables))
 #     optimizer1.apply_gradients(zip(grads2, fcntrain_variables))
     
-    # # # # Or the following section 
+    # Or the following section 
     
 def run_optimization(neural_net, x,y):    # for the second network varies in head
     with tf.GradientTape() as g:
@@ -304,10 +258,8 @@ else:
 
 
 def train_nn(neural_net1, neural_net2, train_data):
- 
         
-    for step, (batch_x, batch_y) in enumerate(train_data.take(training_steps), 1): 
-        # pdb.set_trace()
+    for step, (batch_x, batch_y) in enumerate(train_data.take(training_steps), 1):     
         run_optimization(neural_net1, batch_x, batch_y)
         
         
@@ -320,11 +272,9 @@ def train_nn(neural_net1, neural_net2, train_data):
         
         if step % (display_step*2) == 0:
             pred = neural_net1(batch_x, training=True)
-            # pdb.set_trace()
             loss = RootMeanSquareLoss(batch_y, pred)
             train_loss.append(tf.reduce_mean(loss))
-            tp = np.random.randint(450)
-            Val_loss(neural_net1, teX[tp+0:tp+16], teY[tp+0:tp+16])
+            Val_loss(neural_net1, teX[0:16], teY[0:16])
             print("step: %i, loss: %f val Loss: %f" % (step, tf.reduce_mean(loss), val_loss[-1]))
             
 def Val_loss (neural_net, testX, testY):
@@ -363,25 +313,21 @@ with tf.device('gpu:0/'):
 
 #%% Model weight  save
 
-# model.set_inputs(tX1) is really important
-
 
 input("Check the name again to save as it may overload previous .....")
 
-# neural_net1.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/random name selection')
+# neural_net1.save_weights(
+# '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/give_your_name')
+# # 
 
-# 
-
-###my_checkpoint, test1, emon_withglass, emon_withoutgss, sreeni2, emon_lab, avijoy, masud
-
+###my_checkpoint, sub3IR, sub1IR, sub4RGB_raw', sub3RGB_raw, sub2RGB_mos_mtlbod
 
 #%% Load weight load
 
 input("Check before loading as it may overload previous .....")
 
 # neural_net1.load_weights(
-#         '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/neha')
-
+#         '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/sub4RGB_raw')
 
 #%% Random testing
 
@@ -391,9 +337,7 @@ input("Check before loading as it may overload previous .....")
 
 # peak penalize (except mse)
 
-# Don't forget to align HERE!! 
-
-i = 5000
+i = 811
 
 fig=plt.figure(figsize=(8, 8))
 columns = 3
@@ -401,22 +345,20 @@ rows = 3
 for j in range( 1, columns*rows +1 ):
     
     i =randint( 50, 5100)
-    i=  7050+j*20
+    i=  4400 -40 + j*40
     print(i)
-    tX = np.reshape(data_align[i:i+40,:,:,:], [40,100,100])
+    tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
-    
-    p_point = np.int(np.round(i*64/30))
-    
-    gt = pulR[p_point: p_point+85, 0]
-
+    gt = pulR[i*2:i*2+80]
     gt = (gt-gt.min())/(gt.max()-gt.min())
+    
     
     # i  = 5+j +j
     # tX = teX1[i]    
     # gt = 0.5*(teY1[i]+1)    
     # tX = teX[i]    
     # gt = 0.5*(teY[i]+1)
+
     
     fig.add_subplot(rows, columns, j)
     tX1 = np.reshape(tX, [-1, 100,100,40])
@@ -445,10 +387,10 @@ plt.show()
 
 
 #%% Seeing inside the network
-
 in1 = neural_net1.layers[0].layers[0](tX1).numpy() # plt.plot(in1[0,:,:,1])
 in2 = neural_net1.layers[0].layers[1](in1).numpy() # plt.plot(in2[0,:,:,1])  
 in3 = neural_net1.layers[0].layers[2](in2).numpy()
+
 in4 = neural_net1.layers[0].layers[3](in3).numpy()
 in5 = neural_net1.layers[0].layers[4](in4).numpy()
 in6 = neural_net1.layers[0].layers[5](in5).numpy()
@@ -499,8 +441,6 @@ tr_l = np.array(train_loss)
 
 val_l = np.array(val_loss)
 
-fig = plt.figure(figsize=(19.20,10.80))
-
 # For suject 2 go till 6230
 # For subject 3 go till 7100
 plt.plot(tr_l, 'r', val_l, 'g')
@@ -509,15 +449,12 @@ plt.xlabel("training step")
 
 plt.ylabel("Errors in MSE")
 
-plt.title("Sample Learning Curve")
+plt.title("Learning curves for IR (person 3)")
 
 lst = ["Training", 'Validation']
 
-
 plt.legend(lst)
 
-
-plt.savefig('learning_curve.eps', format = 'eps', dpi= 1000)
 
 #%% Better visualization
 
@@ -525,7 +462,7 @@ fig=plt.figure(figsize=(8, 8))
 columns = 3
 rows = 3
 for i in range(1, columns*rows +1):
-    img = in5[0, :,:, 40+i]
+    img = in5[0, :,:, 9+i]
     fig.add_subplot(rows, columns, i)
     plt.imshow(img)
 
@@ -534,8 +471,8 @@ for i in range(1, columns*rows +1):
 
 
 
-#%% PPG and network visulization
-neural_net1.layers[0].summary()
+#%% PPG visulization
+
 plt.plot(pulR[500:4000])
 plt.xlabel('time')
 plt.ylabel('PPG magnitude')
@@ -543,24 +480,21 @@ plt.title("PPG magnitude changes")
 
 #%% Signal Reconstruction
 
-divVec = np.ones([85])
-divVec1 = np.zeros([85]) 
+divVec = np.ones([80])
+divVec1 = np.zeros([80]) 
 
-gtV = np.zeros([85])
+gtV = np.zeros([80])
 
-recPPG = np.zeros([85])
+recPPG = np.zeros([80])
 
 for j in range(6):
     
     olap = 40
-    i = 5025 +j*olap
+    i = 490+ j*olap
     print(i)
-    tX = np.reshape(data_align[i:i+40:1,:,:,:], [40,100,100])
+    tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
-     
-    p_point = np.int(np.round(i*64/30))
-    
-    gt = pulR[p_point: p_point+85:1, 0]
+    gt = pulR[i*2:i*2+80]
     gt = (gt-gt.min())/(gt.max()-gt.min())
     
     # i  = 5+j +j
@@ -574,25 +508,25 @@ for j in range(6):
     
     tX1 = (tX1 - tX1.min())/(tX1.max() - tX1.min())
     
-    olap =  np.int(olap*64/30)
-    
+
     # predd = neural_net(trX1) 
     predd = neural_net1(tX1) 
     
-    recPPG[-85:] = recPPG[-85:] + predd
+    recPPG[-80:] = recPPG[-80:] + predd
     
-    recPPG = np.concatenate((recPPG, np.zeros([olap])))
-    
-    
-    gtV[-85:] = gtV[-85:] + np.squeeze(gt*2-1)
-    gtV = np.concatenate((gtV, np.zeros([olap])))
+    recPPG = np.concatenate((recPPG, np.zeros([olap*2])))
     
     
-    divVec1[-85:] = divVec1[-85:]+divVec
-    divVec1 = np.concatenate((divVec1, np.zeros([olap])))    
+    gtV[-80:] = gtV[-80:] + np.squeeze(gt*2-1)
+    gtV = np.concatenate((gtV, np.zeros([olap*2])))
+    
+    
+    divVec1[-80:] = divVec1[-80:]+divVec
+    divVec1 = np.concatenate((divVec1, np.zeros([olap*2])))    
     
     
     
+
 
 
 fig = plt.figure(figsize=(19.20,10.80))
@@ -602,7 +536,7 @@ plt.legend(["Ground Truth", "Predicted"], fontsize = 42, loc = "upper right", nc
 plt.xlabel('time sample (60 samples = 1 second)', fontsize =40, fontweight = 'bold')
 plt.ylabel('PPG magnitude \n (Normalized voltage)', fontsize = 40, fontweight= 'bold')
 
-plt.title("PPG plot for the collected data", fontsize = 40, fontweight = 'bold')
+plt.title("PPG plot for subject 5 (Trained on subject 4)", fontsize = 40, fontweight = 'bold')
 
 plt.margins(x =0, y =0.17)
 # from matplotlib import rcParams
@@ -625,80 +559,8 @@ mpl.rcParams['axes.edgecolor'] = 'black'
 mpl.rcParams['axes.titlesize'] = 20
 mpl.rcParams['legend.fontsize'] = 14
 
-# plt.savefig('cd_sample_res.eps', format = 'eps', dpi= 500)
+
+plt.savefig('tx4to5NoTrain.eps', format = 'eps', dpi= 1000)
+
 
 plt.show() 
-
-#%% Tensorflow lite conversion
-new_path =  os.path.join("../../../Dataset/Merl_Tim/NNSave/SavedWM")
-
-neural_net1._set_inputs(tX1) 
-
-tf.saved_model.save(neural_net2, new_path)# this guy not works???
-neural_net1.save(new_path)
-# or  tf.keras.models.save_model(neural_net1, new_path)
-# save as assets, variable, .pb file extension 
-
-
-conMod = tf.lite.TFLiteConverter.from_saved_model(new_path)
-
-tfLitMod =  conMod.convert()
-
-neural_net1.layers[0].summary()
-
-#%% lite model save both all and FP16
-
-import pathlib
-
-tflite_models_dir = pathlib.Path("../../../Dataset/Merl_Tim/NNSave/SavedWM")
-tflite_models_dir.mkdir(exist_ok=True, parents=True)
-
-tflite_model_file = tflite_models_dir/"masud_lite.tflite"
-tflite_model_file.write_bytes(tfLitMod)
-
-
-conMod.optimizations = [tf.lite.Optimize.DEFAULT]
-conMod.target_spec.supported_types = [tf.float16]
-
-tflite_fp16_model = conMod.convert()
-tflite_model_fp16_file = tflite_models_dir/"masud_lit_f16.tflite"
-tflite_model_fp16_file.write_bytes(tflite_fp16_model)
-
-
-#%% inference
-
-interpreter = tf.lite.Interpreter(model_path=str(tflite_model_file))
-interpreter.allocate_tensors()
-
-# see inside
-print(interpreter.get_input_details())
-
-print(interpreter.get_output_details())
-
-
-interpreter.set_tensor(60, tX1.astype(np.float32))
-
-interpreter.invoke()
-predictions = interpreter.get_tensor(0)
-
-plt.plot(predictions.reshape([85]))
-plt.plot(recPPG[:-80], 'C3')
-
-#%% Fp16 Inference
-
-interpreter = tf.lite.Interpreter(model_path=str(tflite_model_fp16_file))
-interpreter.allocate_tensors()
-
-# see inside
-print(interpreter.get_input_details())
-
-print(interpreter.get_output_details())
-
-
-interpreter.set_tensor(60, tX1.astype(np.float32))
-
-interpreter.invoke()
-predictions = interpreter.get_tensor(0)
-
-plt.plot(predictions.reshape([85]))
-plt.plot(recPPG[:-80], 'C3')
