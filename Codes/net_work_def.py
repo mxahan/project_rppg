@@ -456,7 +456,7 @@ class VitaMon1(Model):
         x = self.conv4(x)
         x = self.conv5(x)
         
-        print(x.shape)
+        # print(x.shape)
         x = self.maxpool1(x)
         
         x = self.incept1(x)
@@ -472,7 +472,7 @@ class VitaMon1(Model):
         
         x = self.out1(x)
                 
-        return x
+        return tf.nn.softmax(x)
     
     
 

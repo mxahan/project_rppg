@@ -42,7 +42,7 @@ subjects = ['/Subject1_still', '/Subject2_still', '/Subject3_still', '/Subject4_
 
 im_mode = ['/IR', '/RGB_raw', '/RGB_demosaiced']
 
-path_dir = path_dir + subjects[2]
+path_dir = path_dir + subjects[7]
 
 iD_ir = path_dir +im_mode[1]
 
@@ -77,9 +77,10 @@ x = loadmat(path_dir +'/PulseOX/pulseOx.mat')
 pulseoxR = np.squeeze(x['pulseOxRecord'])
 
 pulR = []
+
 for i in range(pulseoxR.shape[0]):
     pulR.append(pulseoxR[i][0][0])  # check the inside shape sub 5 cause error
-    
+
 pulR = np.array(pulR)
     
 #%% Prepare dataset for training
@@ -88,7 +89,7 @@ pulR = np.array(pulR)
 # For subject 3 go till 7100
 
 random.seed(1)
-rv = np.arange(0,2000, 1)
+rv = np.arange(0,5000, 2)
 np.random.shuffle(rv)
 
 
@@ -107,24 +108,28 @@ else:
 
 frame_cons = 40 # how many frame to consider at a time
 
+
+pulRpos = []
+
 for j,i in enumerate(rv):
     
     img = np.reshape(data[i:i+frame_cons,:,:,0], [frame_cons, *im_size])
     img = np.moveaxis(img, 0,-1)
     trainX.append(img)
-    
-    ppg = pulR[2*i: 2*i+80,0]
-    trainY.append(ppg)
+    ppg = pulR[2*i: 2*i+frame_cons*2,0]
+    trainY.append(np.exp(ppg)/np.sum(np.exp(ppg)))
+    pulRpos.append(np.int(np.argmax(ppg)/2))
+
 
 
 
 #%% Some parameter definition
 
-num_classes = 80 
+num_classes = frame_cons*2
 num_features = 100*100*40 
 
 # Training parameters. Sunday, May 24, 2020 
-learning_rate = 0.0008 # start with 0.001
+learning_rate = 0.001 # start with 0.001
 training_steps = 50000
 batch_size = 16
 display_step = 100
@@ -142,8 +147,8 @@ trainX = np.array(trainX, dtype = np.float32)
 trainY = np.array(trainY, dtype = np.float32)
 
 
-trainY = trainY - trainY.min(axis = 1)[:, np.newaxis]
-trainY = (trainY/(trainY.max(axis = 1)[:, np.newaxis]+ 10**-5))*2-1
+# trainY = trainY - trainY.min(axis = 1)[:, np.newaxis]
+# trainY = (trainY/(trainY.max(axis = 1)[:, np.newaxis]+ 10**-5))*2-1
 
 trainX = (trainX-trainX.min())
 
@@ -165,35 +170,33 @@ train_data = tf.data.Dataset.from_tensor_slices((trX, trY))
 train_data = train_data.repeat().shuffle(buffer_size=100,
                                          seed= 8).batch(batch_size).prefetch(1)
 
-
+# we can run on epoch by removing repeat() and stating only batch and epoch number. 
+# https://www.tensorflow.org/guide/data#batching_dataset_elements
 
 #%% MTL for second dataset (run till trainX and follow from here again)
 
-trainX = np.array(trainX, dtype = np.float32)
-trainY = np.array(trainY, dtype = np.float32)
+# trainX = np.array(trainX, dtype = np.float32)
+# trainY = np.array(trainY, dtype = np.float32)
 
+# trainY = trainY - trainY.min(axis = 1)[:, np.newaxis]
+# trainY = (trainY/(trainY.max(axis = 1)[:, np.newaxis]+ 10**-5))*2-1
 
-trainY = trainY - trainY.min(axis = 1)[:, np.newaxis]
-trainY = (trainY/(trainY.max(axis = 1)[:, np.newaxis]+ 10**-5))*2-1
+# trainX = (trainX-trainX.min())
 
-trainX = (trainX-trainX.min())
+# trainX = trainX/ trainX.max()
+# trainY = (trainY-trainY.min())/(trainY.max()-trainY.min())
+# bad idea as global minima and outlines
 
-trainX = trainX/ trainX.max()
-#trainY = (trainY-trainY.min())/(trainY.max()-trainY.min())
- # bad idea as global minima and outlines
+# trX1, teX1, trY1, teY1 = train_test_split(trainX , trainY, 
+#                                       test_size = .1, random_state = 42)
 
-trX1, teX1, trY1, teY1 = train_test_split(trainX , trainY, 
-                                      test_size = .1, random_state = 42)
-
-
-
-# train_data1 = tf.data.Dataset.from_tensor_slices((trX1, trY1))
-# train_data1 = train_data.repeat().shuffle(2000).batch(batch_size).prefetch(1)
-
+# # train_data1 = tf.data.Dataset.from_tensor_slices((trX1, trY1))
+# # train_data1 = train_data.repeat().shuffle(2000).batch(batch_size).prefetch(1)
 
 
 #%% Loss function  
 # import pdb
+
 
 def RootMeanSquareLoss(x,y):
     loss = tf.keras.losses.MSE(y_true = y, y_pred =x)  # initial one
@@ -201,13 +204,21 @@ def RootMeanSquareLoss(x,y):
     # pdb.set_trace()   
     loss2 = tf.reduce_mean((tf.math.abs(tf.math.sign(y))-tf.math.sign(tf.math.multiply(x,y))),axis = -1)
     # print(loss2.shape)
-    
     # print(tf.reduce_mean(loss), tf.reduce_mean(loss2))
     return loss + 0.25*loss2
 
 
+# scce = tf.keras.losses.SparseCategoricalCrossentropy()
+
+def scce(x,y):
+    # loss = tf.nn.softmax_cross_entropy_with_logits(x, y)
+    loss = 50*tf.keras.losses.MSE(y_true = x, y_pred =y)
+    return loss 
+
+# Wrap around any function to create a class type structure.
+
 #%%  Optimizer Definition
-optimizer = tf.optimizers.SGD(learning_rate*2)
+optimizer = tf.optimizers.SGD(learning_rate)
 optimizer1 = tf.optimizers.SGD(learning_rate/2)
 
 # def run_optimization(neural_net, x,y):    
@@ -238,7 +249,7 @@ optimizer1 = tf.optimizers.SGD(learning_rate/2)
 def run_optimization(neural_net, x,y):    # for the second network varies in head
     with tf.GradientTape() as g:
         pred =  neural_net(x, training = True) 
-        loss =  RootMeanSquareLoss(y, pred)  # change for mtl
+        loss =  scce(y, pred)  # change for mtl
         
     
     trainable_variables =  neural_net.trainable_variables
@@ -272,30 +283,27 @@ def train_nn(neural_net1, neural_net2, train_data):
         
         if step % (display_step*2) == 0:
             pred = neural_net1(batch_x, training=True)
-            loss = RootMeanSquareLoss(batch_y, pred)
+            loss = scce(batch_y, pred)
             train_loss.append(tf.reduce_mean(loss))
             Val_loss(neural_net1, teX[0:16], teY[0:16])
             print("step: %i, loss: %f val Loss: %f" % (step, tf.reduce_mean(loss), val_loss[-1]))
             
 def Val_loss (neural_net, testX, testY):
     pred = neural_net(testX, training = False)
-    loss = RootMeanSquareLoss(testY, pred)
+    loss = scce(testY, pred)
     val_loss.append(tf.reduce_mean(loss))
     
-    
 #%% Bringing Network
-from net_work_def import  MtlNetwork_head, MtlNetwork_body
+from net_work_def import  VitaMon1
 # power of CNN
 #%% load network
 # neural_net = ConvNet(num_classes)
 # Basenet = ConvNet1(num_classes) # No longer that important - too much parameters use others
 
-mtl_body =  MtlNetwork_body()
-head1 =  MtlNetwork_head(num_classes)
-head2 = MtlNetwork_head(num_classes)
+neural_net1 =  VitaMon1(80)
 
-neural_net1 =  tf.keras.Sequential([mtl_body, head1])
-neural_net2 =  tf.keras.Sequential([mtl_body, head2])
+# neural_net2 =  VitaMon1(80)
+
 
 
 # Great result with multitasking model
@@ -306,7 +314,7 @@ neural_net2 =  tf.keras.Sequential([mtl_body, head2])
 # inarg = (neural_net, train_data)
 # multi-task net
 
-inarg = (neural_net1, neural_net2, train_data)
+inarg = (neural_net1, neural_net1, train_data)
 
 with tf.device('gpu:0/'):
     train_nn(*inarg)
@@ -489,8 +497,8 @@ recPPG = np.zeros([80])
 
 for j in range(6):
     
-    olap = 40
-    i = 490+ j*olap
+    olap = 10
+    i = 1000+ j*olap
     print(i)
     tX = np.reshape(data[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
@@ -510,7 +518,7 @@ for j in range(6):
     
 
     # predd = neural_net(trX1) 
-    predd = neural_net1(tX1) 
+    predd = neural_net1(tX1) *50
     
     recPPG[-80:] = recPPG[-80:] + predd
     
