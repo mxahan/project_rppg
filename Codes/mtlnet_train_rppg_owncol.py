@@ -40,10 +40,10 @@ import pandas as pd
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_raw'
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_demosaiced'
 
-path_dir = '../../../Dataset/Personal_collection/sub8_neha/col1/'
+path_dir = '../../../Dataset/Personal_collection/sub5_indrajeet/col1/'
 
-ppgtotal =  pd.read_csv(path_dir +'neha/BVP.csv')
-EventMark = pd.read_csv(path_dir+'neha/tags.csv')
+ppgtotal =  pd.read_csv(path_dir +'indrajeet/BVP.csv')
+EventMark = pd.read_csv(path_dir+'indrajeet/tags.csv')
 
 dataPath = os.path.join(path_dir, '*.MOV')
 
@@ -80,7 +80,8 @@ while(cap.isOpened()):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     
     gray  = gray[:,:,1]
-    gray =  gray[200:950, 650:1350]
+    gray =  gray[100:1000, 600:1400]
+    
    
     gray = cv2.resize(gray, im_size)
     
@@ -109,16 +110,16 @@ data =  np.array(data)
 # check starting time in BVP.csv
 evmarknp =  EventMark.to_numpy()
 ppgnp =  ppgtotal.to_numpy()
-start_gap =  evmarknp[1] -  1601323050
+start_gap =  evmarknp[0] -  1599690864
 
 # check from BVP.csv column name. 
 # Check video starting point from watching the frame with the light event marker 
 
-end_point =  evmarknp[2] - evmarknp[1]
+end_point =  evmarknp[1] - evmarknp[0]
 
 ppgnp_align =  ppgnp[np.int(start_gap*64):np.int((start_gap+end_point)*64)]
 
-data_align = data[259 : 259 +np.int(end_point*30)+5]  
+data_align = data[194 : 194 +np.int(end_point*30)+5] 
 
 #%% Prepare dataset for training
 
@@ -366,7 +367,7 @@ with tf.device('gpu:0/'):
 # model.set_inputs(tX1) is really important
 
 
-input("Check the name again to save as it may overload previous .....")
+input("saving Check the name again to save as it may overload previous .....")
 
 # neural_net1.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/random name selection')
 
@@ -377,7 +378,7 @@ input("Check the name again to save as it may overload previous .....")
 
 #%% Load weight load
 
-input("Check before loading as it may overload previous .....")
+input("loading Check before loading as it may overload previous .....")
 
 # neural_net1.load_weights(
 #         '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/neha')
@@ -553,7 +554,7 @@ recPPG = np.zeros([85])
 for j in range(6):
     
     olap = 40
-    i = 5025 +j*olap
+    i = 5030 +j*olap
     print(i)
     tX = np.reshape(data_align[i:i+40:1,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 

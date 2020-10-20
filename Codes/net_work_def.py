@@ -442,7 +442,7 @@ class VitaMon1(Model):
         self.flatten = layers.Flatten()
 
         self.drop1 =  layers.Dropout(0.5)
-        self.out1 = layers.Dense(num_classes)
+        self.out1 = layers.Dense(num_classes, activation=tf.nn.relu)
         
         
     def call(self, x, training=False ):
@@ -472,7 +472,7 @@ class VitaMon1(Model):
         
         x = self.out1(x)
                 
-        return tf.nn.softmax(x)
+        return x
     
     
 

@@ -129,7 +129,7 @@ num_classes = frame_cons*2
 num_features = 100*100*40 
 
 # Training parameters. Sunday, May 24, 2020 
-learning_rate = 0.001 # start with 0.001
+learning_rate = 0.0005 # start with 0.001
 training_steps = 50000
 batch_size = 16
 display_step = 100
@@ -144,7 +144,7 @@ display_step = 100
 
 #%%    Normalize and split
 trainX = np.array(trainX, dtype = np.float32)
-trainY = np.array(trainY, dtype = np.float32)
+trainY = np.array(pulRpos, dtype = np.float32)
 
 
 # trainY = trainY - trainY.min(axis = 1)[:, np.newaxis]
@@ -210,10 +210,14 @@ def RootMeanSquareLoss(x,y):
 
 # scce = tf.keras.losses.SparseCategoricalCrossentropy()
 
+# def scce(x,y):
+#     # loss = tf.nn.softmax_cross_entropy_with_logits(x, y)
+#     loss = 50*tf.keras.losses.MSE(y_true = x, y_pred =y)
+#     return loss 
+
 def scce(x,y):
-    # loss = tf.nn.softmax_cross_entropy_with_logits(x, y)
-    loss = 50*tf.keras.losses.MSE(y_true = x, y_pred =y)
-    return loss 
+    loss = tf.keras.losses.MSE(y_true = y, y_pred =x)  # initial one
+    return loss
 
 # Wrap around any function to create a class type structure.
 
@@ -300,7 +304,7 @@ from net_work_def import  VitaMon1
 # neural_net = ConvNet(num_classes)
 # Basenet = ConvNet1(num_classes) # No longer that important - too much parameters use others
 
-neural_net1 =  VitaMon1(80)
+neural_net1 =  VitaMon1(1)
 
 # neural_net2 =  VitaMon1(80)
 
