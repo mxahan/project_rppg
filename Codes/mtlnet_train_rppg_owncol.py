@@ -403,7 +403,7 @@ rows = 3
 for j in range( 1, columns*rows +1 ):
     
     i =randint( 50, 5100)
-    i=  7850+j*20
+    i=  6850+j*20
     print(i)
     tX = np.reshape(data_align[i:i+40,:,:,:], [40,100,100])
     tX = np.array(tX, dtype= np.float64)
@@ -556,7 +556,7 @@ recPPG = np.zeros([85])
 for j in range(6):
     
     olap = 40
-    i = 7870 +j*olap
+    i = 6870 +j*olap
     print(i)
     tX = np.reshape(data_align[i:i+40:1,:,:,:], [40,100,100])
     tX = np.array(tX, dtype= np.float64)
@@ -650,6 +650,12 @@ tf.keras.models.save_model(neural_net1, new_path)
 # tf lite converter
 conMod = tf.lite.TFLiteConverter.from_saved_model(new_path)
 
+# alternatively we can get from the model itself without any saving!!!
+
+# converter = tf.lite.TFLiteConverter.from_keras_model(neural_net1)
+# tflite_model = converter.convert()
+
+
 # conMod.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS,
 #                                        tf.lite.OpsSet.SELECT_TF_OPS] # need this for some reason
 
@@ -660,6 +666,7 @@ neural_net1.layers[0].summary()
 #%% lite model save both all and FP16
 
 # save the lit model
+# write the model to the ***.tflite format!
 import pathlib
 
 tflite_models_dir = pathlib.Path("../../../Dataset/Merl_Tim/NNSave/SavedWM")
@@ -672,36 +679,47 @@ tflite_model_file.write_bytes(tfLitMod)
 conMod.optimizations = [tf.lite.Optimize.DEFAULT]
 conMod.target_spec.supported_types = [tf.float16]
 
+# save the model in **.tflite format
+
 tflite_fp16_model = conMod.convert()
 tflite_model_fp16_file = tflite_models_dir/"masud_lit_f16.tflite"
 tflite_model_fp16_file.write_bytes(tflite_fp16_model)
 
 
-#%% inference
+#%% inference bring the tflite_model_file
 
+# bring and allocate-tensors
 interpreter = tf.lite.Interpreter(model_path=str(tflite_model_file))
 interpreter.allocate_tensors()
 
 # see inside
 print(interpreter.get_input_details())
-
 print(interpreter.get_output_details())
+# port for the input and output
 
 input_index = interpreter.get_input_details()[0]["index"]
 output_index = interpreter.get_output_details()[0]["index"]
 
+# format input_data
+# interpreter set tensor
+# we can provide intermediate data too by selecing the index
 input_data = np.array(tX1, dtype=np.float32)
-
 interpreter.set_tensor(input_index, input_data)
 
+# getting out the output, 
+# allocate tensor, fill values before invoke
 interpreter.invoke()
+# have everything in # get_tensor_details()
+# all intermediate results are there.
+# get_tensor to get some tensor from the desired index
+# mostly we want output_index
 predictions = interpreter.get_tensor(output_index)
 
 plt.plot(predictions.reshape([85]))
 plt.plot(recPPG[:-80], 'C3')
 
 #%% Fp16 Inference
-
+# same as previous but a more quantized model
 interpreter = tf.lite.Interpreter(model_path=str(tflite_model_fp16_file))
 interpreter.allocate_tensors()
 
