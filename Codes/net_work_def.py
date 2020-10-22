@@ -350,7 +350,7 @@ class MtlNetwork_body(Model): # Vitamon network except inception layer
 
     # Set forward pass.
     def call(self, x, training=False):
- #       x = tf.reshape(x, [-1, 100, 100, 40])
+        x = tf.reshape(x, [-1, 100, 100, 40])
         
         # x =self.concat1(xl)
         

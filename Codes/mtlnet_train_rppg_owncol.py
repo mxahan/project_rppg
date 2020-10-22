@@ -210,25 +210,26 @@ train_data = tf.data.Dataset.from_tensor_slices((trX, trY))
 train_data = train_data.repeat().shuffle(buffer_size=100,
                                          seed= 8).batch(batch_size).prefetch(1)
 
-
+# we can run on epoch by removing repeat() and stating only batch and epoch number. 
+# https://www.tensorflow.org/guide/data#batching_dataset_elements
 
 #%% MTL for second dataset (run till trainX and follow from here again)
 
-trainX = np.array(trainX, dtype = np.float32)
-trainY = np.array(trainY, dtype = np.float32)
+# trainX = np.array(trainX, dtype = np.float32)
+# trainY = np.array(trainY, dtype = np.float32)
 
 
-trainY = trainY - trainY.min(axis = 1)[:, np.newaxis]
-trainY = (trainY/(trainY.max(axis = 1)[:, np.newaxis]+ 10**-5))*2-1
+# trainY = trainY - trainY.min(axis = 1)[:, np.newaxis]
+# trainY = (trainY/(trainY.max(axis = 1)[:, np.newaxis]+ 10**-5))*2-1
 
-trainX = (trainX-trainX.min())
+# trainX = (trainX-trainX.min())
 
-trainX = trainX/ trainX.max()
-#trainY = (trainY-trainY.min())/(trainY.max()-trainY.min())
-# bad idea as global minima and outlines
+# trainX = trainX/ trainX.max()
+# #trainY = (trainY-trainY.min())/(trainY.max()-trainY.min())
+# # bad idea as global minima and outlines
 
-trX1, teX1, trY1, teY1 = train_test_split(trainX , trainY, 
-                                      test_size = .1, random_state = 42)
+# trX1, teX1, trY1, teY1 = train_test_split(trainX , trainY, 
+#                                       test_size = .1, random_state = 42)
 
 
 
@@ -359,7 +360,7 @@ neural_net2 =  tf.keras.Sequential([mtl_body, head2])
 
 inarg = (neural_net1, neural_net2, train_data)
 
-with tf.device('gpu:0/'):
+with tf.device('gpu:0'):
     train_nn(*inarg)
 
 #%% Model weight  save
@@ -381,7 +382,7 @@ input("saving Check the name again to save as it may overload previous .....")
 input("loading Check before loading as it may overload previous .....")
 
 # neural_net1.load_weights(
-#         '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/neha')
+#         '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/faradfnadfoie')
 
 
 #%% Random testing
@@ -402,9 +403,10 @@ rows = 3
 for j in range( 1, columns*rows +1 ):
     
     i =randint( 50, 5100)
-    i=  7050+j*20
+    i=  7850+j*20
     print(i)
     tX = np.reshape(data_align[i:i+40,:,:,:], [40,100,100])
+    tX = np.array(tX, dtype= np.float64)
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
     
     p_point = np.int(np.round(i*64/30))
@@ -526,7 +528,7 @@ fig=plt.figure(figsize=(8, 8))
 columns = 3
 rows = 3
 for i in range(1, columns*rows +1):
-    img = in5[0, :,:, 40+i]
+    img = in4[0, :,:, 20+i]
     fig.add_subplot(rows, columns, i)
     plt.imshow(img)
 
@@ -554,9 +556,10 @@ recPPG = np.zeros([85])
 for j in range(6):
     
     olap = 40
-    i = 5030 +j*olap
+    i = 7870 +j*olap
     print(i)
     tX = np.reshape(data_align[i:i+40:1,:,:,:], [40,100,100])
+    tX = np.array(tX, dtype= np.float64)
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
      
     p_point = np.int(np.round(i*64/30))
@@ -631,17 +634,24 @@ mpl.rcParams['legend.fontsize'] = 14
 plt.show() 
 
 #%% Tensorflow lite conversion
+# path selection and save original model
+# need to _set_inputs(tX1) before final compression 
 new_path =  os.path.join("../../../Dataset/Merl_Tim/NNSave/SavedWM")
 
-neural_net1._set_inputs(tX1) 
+neural_net1._set_inputs(tX1) # run this line once
 
-tf.saved_model.save(neural_net2, new_path)# this guy not works???
-neural_net1.save(new_path)
-# or  tf.keras.models.save_model(neural_net1, new_path)
+#%% save model
+
+# tf.saved_model.save(neural_net1, new_path)# this guy not works???
+# neural_net1.save(new_path)
+tf.keras.models.save_model(neural_net1, new_path)
 # save as assets, variable, .pb file extension 
 
-
+# tf lite converter
 conMod = tf.lite.TFLiteConverter.from_saved_model(new_path)
+
+# conMod.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS,
+#                                        tf.lite.OpsSet.SELECT_TF_OPS] # need this for some reason
 
 tfLitMod =  conMod.convert()
 
@@ -649,6 +659,7 @@ neural_net1.layers[0].summary()
 
 #%% lite model save both all and FP16
 
+# save the lit model
 import pathlib
 
 tflite_models_dir = pathlib.Path("../../../Dataset/Merl_Tim/NNSave/SavedWM")
@@ -657,7 +668,7 @@ tflite_models_dir.mkdir(exist_ok=True, parents=True)
 tflite_model_file = tflite_models_dir/"masud_lite.tflite"
 tflite_model_file.write_bytes(tfLitMod)
 
-
+# further optimization
 conMod.optimizations = [tf.lite.Optimize.DEFAULT]
 conMod.target_spec.supported_types = [tf.float16]
 
@@ -676,11 +687,15 @@ print(interpreter.get_input_details())
 
 print(interpreter.get_output_details())
 
+input_index = interpreter.get_input_details()[0]["index"]
+output_index = interpreter.get_output_details()[0]["index"]
 
-interpreter.set_tensor(60, tX1.astype(np.float32))
+input_data = np.array(tX1, dtype=np.float32)
+
+interpreter.set_tensor(input_index, input_data)
 
 interpreter.invoke()
-predictions = interpreter.get_tensor(0)
+predictions = interpreter.get_tensor(output_index)
 
 plt.plot(predictions.reshape([85]))
 plt.plot(recPPG[:-80], 'C3')
@@ -695,11 +710,14 @@ print(interpreter.get_input_details())
 
 print(interpreter.get_output_details())
 
+input_index = interpreter.get_input_details()[0]["index"]
 
-interpreter.set_tensor(60, tX1.astype(np.float32))
+output_index = interpreter.get_output_details()[0]["index"]
+
+interpreter.set_tensor(input_index, tX1.astype(np.float32))
 
 interpreter.invoke()
-predictions = interpreter.get_tensor(0)
+predictions = interpreter.get_tensor(output_index)
 
 plt.plot(predictions.reshape([85]))
 plt.plot(recPPG[:-80], 'C3')
