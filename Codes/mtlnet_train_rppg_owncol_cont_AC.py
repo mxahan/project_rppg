@@ -40,10 +40,10 @@ import pandas as pd
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_raw'
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_demosaiced'
 
-path_dir = '../../../Dataset/Personal_collection/sub5_indrajeet/col1/'
+path_dir = '../../../Dataset/Personal_collection/sub9_MV/Multiview_CL/zahid_CM/'
 
-ppgtotal =  pd.read_csv(path_dir +'indrajeet/BVP.csv')
-EventMark = pd.read_csv(path_dir+'indrajeet/tags.csv')
+ppgtotal =  pd.read_csv(path_dir +'zahid_CM/BVP.csv')
+EventMark = pd.read_csv(path_dir+'zahid_CM/tags.csv')
 
 dataPath = os.path.join(path_dir, '*.MOV')
 
@@ -71,6 +71,9 @@ cap = cv2.VideoCapture(files[0])
 
 import pdb
 
+
+# use different crop as augmentation 
+
 while(cap.isOpened()):
     ret, frame = cap.read()
     
@@ -80,7 +83,7 @@ while(cap.isOpened()):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     
     gray  = gray[:,:,1]
-    gray =  gray[120:980, 630:1300]
+    gray =  gray[120:700, 690:1150]
     
    
     gray = cv2.resize(gray, im_size)
@@ -110,7 +113,7 @@ data =  np.array(data)
 # check starting time in BVP.csv
 evmarknp =  EventMark.to_numpy()
 ppgnp =  ppgtotal.to_numpy()
-start_gap =  evmarknp[0] -  1599690864
+start_gap =  evmarknp[0] -  1606514188
 
 # check from BVP.csv column name. 
 # Check video starting point from watching the frame with the light event marker 
@@ -119,7 +122,7 @@ end_point =  evmarknp[1] - evmarknp[0]
 
 ppgnp_align =  ppgnp[np.int(start_gap*64):np.int((start_gap+end_point)*64)]
 
-data_align = data[194 : 194 +np.int(end_point*30)+5] 
+data_align = data[120 : 120 +np.int(end_point*30)+5] 
 
 #%% Prepare dataset for training
 
@@ -130,7 +133,7 @@ data_align = data[194 : 194 +np.int(end_point*30)+5]
 # 40 frames considered to to equivalent to 85 samples in PPg
 
 random.seed(1)
-rv = np.arange(0,5000, 1)+1000
+rv = np.arange(0,5000, 1)+700
 np.random.shuffle(rv)
 
 
