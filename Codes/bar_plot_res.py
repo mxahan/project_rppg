@@ -7,7 +7,7 @@ Created on Tue Aug  4 00:54:21 2020
 """
 import matplotlib.pyplot as plt
 import matplotlib
-matplotlib.use('PS')
+# matplotlib.use('PS')
 
 # plt.style.use('ggplot')
 
@@ -51,15 +51,15 @@ plt.bar(ind, TP, width/2.5)
 plt.bar(ind + width/2, FP, width/2.5)
 plt.bar(ind + 2*width/2, FN, width/2.5)
 
-plt.yticks(fontsize=30)
-plt.ylabel('Percentage', fontweight="bold", fontsize=40)
+plt.yticks(fontsize=50)
+plt.ylabel('Percentage', fontweight="bold", fontsize=50)
 plt.title('In house dataset',fontsize=40, fontweight="bold")
 
 plt.xlabel("Collected Dataset", fontsize=40, fontweight="bold")
 
 xlabels = ('Personal', 'Tx from\n person', 'Tx from \n MTL')
 
-plt.xticks(ind + width/3, xlabels, fontsize=40)
+plt.xticks(ind + width/3, xlabels, fontsize=50)
 ax4.set_xticklabels(xlabels, rotation=45, fontsize=35)
 
 # plt.legend(loc='best', ncol=3, fontsize=25)
@@ -79,7 +79,7 @@ plt.bar(ind, TP, width/4, label='TP peaks')
 plt.bar(ind + width/3, FP, width/4, label='FP')
 plt.bar(ind + 2*width/3, FN, width/4, label='FN')
 
-plt.yticks(fontsize=30)
+plt.yticks(fontsize=50)
 
 # plt.ylabel('Scores')
 plt.title('UBFC-RPPG dataset', fontsize=40, fontweight="bold")
@@ -186,7 +186,7 @@ plt.bar(ind, TP, width/2.5, label = "TP")
 plt.bar(ind + width/2, FP, width/2.5, label = "FP")
 plt.bar(ind + 2*width/2, FN, width/2.5, label = "FN")
 
-plt.yticks(fontsize=30)
+plt.yticks(fontsize=40)
 plt.ylabel('Percentage', fontweight="bold", fontsize=40)
 plt.title('Transfer result for MERL',fontsize=40, fontweight="bold")
 
@@ -376,4 +376,4 @@ plt.legend(loc='best', ncol=3, fontsize=30)
 
 # plt.savefig('bar_chart_sample3.eps', bbox_inches="tight", format = 'eps', dpi= 500)
 # 
-plt.show()
+# plt.show()

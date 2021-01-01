@@ -40,12 +40,12 @@ import pandas as pd
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_raw'
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_demosaiced'
 
-path_dir = '../../../Dataset/Personal_collection/sub9_MV/Multiview_CL/emon_CM/'
+path_dir = '../../../Dataset/logi/zahid/'
 
-ppgtotal =  pd.read_csv(path_dir +'emon_CM/BVP.csv')
-EventMark = pd.read_csv(path_dir+'emon_CM/tags.csv')
+ppgtotal =  pd.read_csv(path_dir +'zahid/BVP.csv')
+EventMark = pd.read_csv(path_dir+'zahid/tags.csv')
 
-dataPath = os.path.join(path_dir, '*.MOV')
+dataPath = os.path.join(path_dir, '*.mov')
 
 files = glob.glob(dataPath)  # care about the serialization
 # end load pathdir
@@ -71,9 +71,6 @@ cap = cv2.VideoCapture(files[0])
 
 import pdb
 
-
-# use different crop as augmentation 
-
 while(cap.isOpened()):
     ret, frame = cap.read()
     
@@ -83,7 +80,7 @@ while(cap.isOpened()):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     
     gray  = gray[:,:,1]
-    gray =  gray[200:700, 800:1230]
+    gray =  gray[160:910, 725:1190]
     
    
     gray = cv2.resize(gray, im_size)
@@ -113,7 +110,7 @@ data =  np.array(data)
 # check starting time in BVP.csv
 evmarknp =  EventMark.to_numpy()
 ppgnp =  ppgtotal.to_numpy()
-start_gap =  evmarknp[-2] -  1606512973
+start_gap =  evmarknp[-2] -  1609184521
 
 # check from BVP.csv column name. 
 # Check video starting point from watching the frame with the light event marker 
@@ -122,7 +119,7 @@ end_point =  evmarknp[-1] - evmarknp[-2]
 
 ppgnp_align =  ppgnp[np.int(start_gap*64):np.int((start_gap+end_point)*64)]
 
-data_align = data[247 : 247 +np.int(end_point*30)+5] 
+data_align = data[49 : 49 +np.int(end_point*30)+5] 
 
 #%% Prepare dataset for training
 
@@ -133,12 +130,11 @@ data_align = data[247 : 247 +np.int(end_point*30)+5]
 # 40 frames considered to to equivalent to 85 samples in PPg
 
 random.seed(1)
-rv = np.arange(0, 6000, 2)+1500
-# np.random.shuffle(rv)
+rv = np.arange(0,5000, 1)+1000
+np.random.shuffle(rv)
 
 
 # rv = [randint(0, 5300) for _ in range(5000)] ## random removal 
-
 rv =  np.array(rv)
 pulR = np.reshape(ppgnp_align, [ppgnp_align.shape[0],1]) # take 45 frames together
 #      #%%
@@ -160,19 +156,9 @@ for j,i in enumerate(rv):
     img = np.moveaxis(img, 0,-1)
     trainX.append(img)
     
-    
     p_point = np.int(np.round(i*64/30))
+    
     ppg = pulR[p_point: p_point+85, 0]
-    trainY.append(ppg)
-    
-    # double frame rate
-    
-    img = np.reshape(data_align[i:i+frame_cons*2:2,:,:,0], [frame_cons, *im_size])
-    img = np.moveaxis(img, 0,-1)
-    trainX.append(img)
-    
-    p_point = np.int(np.round(i*64/30))
-    ppg = pulR[p_point: p_point+85*2:2, 0]
     trainY.append(ppg)
 
 
@@ -183,8 +169,8 @@ num_classes = 85
 num_features = 100*100*40 
 
 # Training parameters. Sunday, May 24, 2020 
-learning_rate = 0.0005 # start with 0.001
-training_steps = 40000
+learning_rate = 0.0008 # start with 0.001
+training_steps = 50000
 batch_size = 16
 display_step = 100
 
@@ -265,7 +251,7 @@ def RootMeanSquareLoss(x,y):
     # print(loss2.shape)
     
     # print(tf.reduce_mean(loss), tf.reduce_mean(loss2))
-    return loss + 0.25*loss2
+    return loss + loss2
 
 
 #%%  Optimizer Definition
@@ -301,6 +287,7 @@ def run_optimization(neural_net, x,y):    # for the second network varies in hea
     with tf.GradientTape() as g:
         pred =  neural_net(x, training = True) 
         loss =  RootMeanSquareLoss(y, pred)  # change for mtl
+        
     
     trainable_variables =  neural_net.trainable_variables
     # trainable_variables =  neural_net.trainable_variables[:-6] 
@@ -308,13 +295,15 @@ def run_optimization(neural_net, x,y):    # for the second network varies in hea
     # trainable_var is a list, select your intended layers: use append  
     gradients =  g.gradient(loss, trainable_variables)  
     optimizer.apply_gradients(zip(gradients, trainable_variables))
+
+
  
-    
 if 'train_loss' in locals():
     print("already exists")
 else:
     train_loss =[]
     val_loss = []
+
 
 def train_nn(neural_net1, neural_net2, train_data):
  
@@ -323,10 +312,13 @@ def train_nn(neural_net1, neural_net2, train_data):
         # pdb.set_trace()
         run_optimization(neural_net1, batch_x, batch_y)
         
+        
+        
         # i = randint(0,trX1.shape[0]-20)
         # batch_x1 = tf.convert_to_tensor(trX1[i:i+batch_size])
         # batch_y1 = tf.convert_to_tensor(trY1[i:i+batch_size])
         # run_optimization(neural_net2, batch_x1, batch_y1)
+        
         
         if step % (display_step*2) == 0:
             pred = neural_net1(batch_x, training=True)
@@ -357,23 +349,24 @@ head2 = MtlNetwork_head(num_classes)
 neural_net1 =  tf.keras.Sequential([mtl_body, head1])
 neural_net2 =  tf.keras.Sequential([mtl_body, head2])
 
+
 # Great result with multitasking model
+
 
 #%% Training the actual network
 # single net
 # inarg = (neural_net, train_data)
 # multi-task net
 
-inarg = (neural_net1, neural_net2, train_data)
+inarg = (neural_net1, neural_net1, train_data)
 
 with tf.device('gpu:0'):
     train_nn(*inarg)
-    
 
 #%% Model weight  save
 
 # model.set_inputs(tX1) is really important
-dfd
+
 
 input("saving Check the name again to save as it may overload previous .....")
 
@@ -381,7 +374,7 @@ neural_net1.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/random
 
 
 
-###my_checkpoint, test1, emon_withglass, emon_withoutgss, sreeni2, emon_lab, avijoy, masud, action_cam_zahid
+###my_checkpoint, test1, emon_withglass, emon_withoutgss, sreeni2, emon_lab, avijoy, masud
 
 
 #%% Load weight load
@@ -389,7 +382,7 @@ neural_net1.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/random
 input("loading Check before loading as it may overload previous .....")
 
 neural_net1.load_weights(
-        '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/indrajeet')
+        '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/zahid_logi')
 
 
 #%% Random testing
@@ -409,8 +402,7 @@ columns = 3
 rows = 3
 for j in range( 1, columns*rows +1 ):
     
-    i =randint( 50, 5100)
-    i=  8690+j*20
+    i=  6850+j*20
     print(i)
     tX = np.reshape(data_align[i:i+40,:,:,:], [40,100,100])
     tX = np.array(tX, dtype= np.float64)
@@ -561,22 +553,33 @@ gtV = np.zeros([85])
 recPPG = np.zeros([85])
 
 for j in range(5):
+    
     olap = 40
-    i = 8165 +j*olap
+    i = 5160 +j*olap
     print(i)
-    tX = np.reshape(data_align[i:i+40,:,:,:], [40,100,100])
+    tX = np.reshape(data_align[i:i+40:1,:,:,:], [40,100,100])
     tX = np.array(tX, dtype= np.float64)
-    tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing  
+    tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
+     
     p_point = np.int(np.round(i*64/30))
-    gt = pulR[p_point: p_point+85, 0]
+    
+    gt = pulR[p_point: p_point+85:1, 0]
     gt = (gt-gt.min())/(gt.max()-gt.min())
+    
+    # i  = 5+j +j
+    # tX = teX1[i]    
+    # gt = 0.5*(teY1[i]+1)    
+    # tX = teX[i]    
+    # gt = 0.5*(teY[i]+1)    
 
     tX1 = np.reshape(tX, [-1, 100,100,40])
 
+    
     tX1 = (tX1 - tX1.min())/(tX1.max() - tX1.min())
     
     olap =  np.int(olap*64/30)
     
+    # predd = neural_net(trX1) 
     predd = neural_net1(tX1) 
     
     recPPG[-85:] = recPPG[-85:] + predd
@@ -722,8 +725,6 @@ plt.show()
 #%% Fp16 Inference
 # same as previous but a more quantized model
 # interpreter = tf.lite.Interpreter(model_path=str(tflite_model_fp16_file))
-import time
-start_time = time.time()
 
 interpreter = tf.lite.Interpreter(model_content=tflite_fp16_model)
 interpreter.allocate_tensors()
@@ -743,9 +744,6 @@ predictions = interpreter.get_tensor(output_index)
 
 plt.plot(predictions.reshape([85]))
 plt.plot(gtV[:-85], 'C3')
-
-
-print("--- %s seconds ---" % (time.time() - start_time))
 
 #%% Space check
 
