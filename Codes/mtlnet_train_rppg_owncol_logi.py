@@ -30,6 +30,8 @@ from random import seed, randint
 from sklearn.model_selection import train_test_split
 
 import pandas as pd
+
+
 #%%  Data Load Parts
 
 
@@ -40,10 +42,10 @@ import pandas as pd
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_raw'
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_demosaiced'
 
-path_dir = '../../../Dataset/logi/zahid/'
+path_dir = '../../../Dataset/logi/emon/'
 
-ppgtotal =  pd.read_csv(path_dir +'zahid/BVP.csv')
-EventMark = pd.read_csv(path_dir+'zahid/tags.csv')
+ppgtotal =  pd.read_csv(path_dir +'emon/BVP.csv')
+EventMark = pd.read_csv(path_dir+'emon/tags.csv')
 
 dataPath = os.path.join(path_dir, '*.mov')
 
@@ -80,7 +82,7 @@ while(cap.isOpened()):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     
     gray  = gray[:,:,1]
-    gray =  gray[160:910, 725:1190]
+    gray =  gray[140:735, 720:1190]
     
    
     gray = cv2.resize(gray, im_size)
@@ -102,6 +104,8 @@ cap.release()
 cv2.destroyAllWindows()
 data =  np.array(data)
 
+
+
 #%% PPG signal selection and alignment. 
 # The starting points are the crucial, 
 # this section needs select both the sratrting of video and the ppg point
@@ -110,7 +114,7 @@ data =  np.array(data)
 # check starting time in BVP.csv
 evmarknp =  EventMark.to_numpy()
 ppgnp =  ppgtotal.to_numpy()
-start_gap =  evmarknp[-2] -  1609184521
+start_gap =  evmarknp[-2] -  1609183668
 
 # check from BVP.csv column name. 
 # Check video starting point from watching the frame with the light event marker 
@@ -119,7 +123,7 @@ end_point =  evmarknp[-1] - evmarknp[-2]
 
 ppgnp_align =  ppgnp[np.int(start_gap*64):np.int((start_gap+end_point)*64)]
 
-data_align = data[49 : 49 +np.int(end_point*30)+5] 
+data_align = data[500 : 500 +np.int(end_point*30)+5] 
 
 #%% Prepare dataset for training
 
@@ -130,8 +134,8 @@ data_align = data[49 : 49 +np.int(end_point*30)+5]
 # 40 frames considered to to equivalent to 85 samples in PPg
 
 random.seed(1)
-rv = np.arange(0,5000, 1)+1000
-np.random.shuffle(rv)
+rv = np.arange(0,4000, 2)+1000
+# np.random.shuffle(rv)
 
 
 # rv = [randint(0, 5300) for _ in range(5000)] ## random removal 
@@ -169,7 +173,7 @@ num_classes = 85
 num_features = 100*100*40 
 
 # Training parameters. Sunday, May 24, 2020 
-learning_rate = 0.0008 # start with 0.001
+learning_rate = 0.0002 # start with 0.001
 training_steps = 50000
 batch_size = 16
 display_step = 100
@@ -251,7 +255,7 @@ def RootMeanSquareLoss(x,y):
     # print(loss2.shape)
     
     # print(tf.reduce_mean(loss), tf.reduce_mean(loss2))
-    return loss + loss2
+    return loss + 0.5*loss2
 
 
 #%%  Optimizer Definition
@@ -338,7 +342,7 @@ def Val_loss (neural_net, testX, testY):
 #%% Bringing Network
 from net_work_def import  MtlNetwork_head, MtlNetwork_body
 # power of CNN
-#%% load network
+#%% load network usual
 # neural_net = ConvNet(num_classes)
 # Basenet = ConvNet1(num_classes) # No longer that important - too much parameters use others
 
@@ -353,12 +357,23 @@ neural_net2 =  tf.keras.Sequential([mtl_body, head2])
 # Great result with multitasking model
 
 
+#%% Pruning Network 
+from net_work_def import CNN_part
+
+model__1 = CNN_part()
+
+model__2 = tf.keras.Sequential([tf.keras.layers.Dense(512, activation='relu', input_shape=(576,)),
+                                tf.keras.layers.Dense(128, activation='relu', input_shape=(512,)),
+                                tf.keras.layers.Dense(85, activation = 'tanh', input_shape=(128,))])
+
+model_f =  tf.keras.Sequential([model__1, model__2])
+
 #%% Training the actual network
 # single net
 # inarg = (neural_net, train_data)
 # multi-task net
 
-inarg = (neural_net1, neural_net1, train_data)
+inarg = (model_f, model_f, train_data)
 
 with tf.device('gpu:0'):
     train_nn(*inarg)
@@ -370,21 +385,52 @@ with tf.device('gpu:0'):
 
 input("saving Check the name again to save as it may overload previous .....")
 
-neural_net1.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/random name selection')
+model_f.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/emon_logi')
 
 
 
-###my_checkpoint, test1, emon_withglass, emon_withoutgss, sreeni2, emon_lab, avijoy, masud
+###my_checkpoint, test1, emon_withglass, emon_withoutgss, sreeni2, emon_lab, avijoy, masud, zahid_logi, emon_logi
 
 
 #%% Load weight load
 
 input("loading Check before loading as it may overload previous .....")
 
-neural_net1.load_weights(
-        '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/zahid_logi')
+model_f.load_weights(
+        '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/emon_logi')
+
+#%% pruning attempt
+import tensorflow_model_optimization as tfmot
+
+tfmot.sparsity.keras.prune_low_magnitude
 
 
+model_for_p = tf.keras.Sequential([tfmot.sparsity.keras.prune_low_magnitude(tf.keras.layers.Dense(512, activation='relu', input_shape=(576,))),
+                                tfmot.sparsity.keras.prune_low_magnitude(tf.keras.layers.Dense(128, activation='relu', input_shape=(512,))),
+                                tfmot.sparsity.keras.prune_low_magnitude(tf.keras.layers.Dense(85, activation = 'tanh', input_shape=(128,)))])
+
+model_f_prune = tf.keras.Sequential([model__1, model_for_p])
+
+#%% Pruning continue
+
+model_f_prune.compile(optimizer=optimizer,
+              loss=RootMeanSquareLoss,
+              metrics=['accuracy'])
+
+model_f_prune.fit(trX[1:500], trY[1:500],
+                  batch_size=5, epochs=2, validation_split=0.1,
+              callbacks=[tfmot.sparsity.keras.UpdatePruningStep()])
+
+# wow so far works
+
+#%% Pruning Continue
+model_for_export =  tfmot.sparsity.keras.strip_pruning(model_for_p)
+
+model_4 =  tf.keras.Sequential([model__1, model_for_export])
+
+model_4.compile(optimizer=optimizer,
+              loss=RootMeanSquareLoss,
+              metrics=['accuracy'])
 #%% Random testing
 
 # modification in network 
@@ -402,7 +448,7 @@ columns = 3
 rows = 3
 for j in range( 1, columns*rows +1 ):
     
-    i=  6850+j*20
+    i=  7500+j*20
     print(i)
     tX = np.reshape(data_align[i:i+40,:,:,:], [40,100,100])
     tX = np.array(tX, dtype= np.float64)
@@ -430,7 +476,7 @@ for j in range( 1, columns*rows +1 ):
     # predd = neural_net(trX1) 
     
     
-    predd = neural_net1(tX1) 
+    predd = model_f(tX1) 
     plt.plot(predd[0])
 
     plt.legend(["Ground Truth", "Predicted"])
@@ -555,7 +601,7 @@ recPPG = np.zeros([85])
 for j in range(5):
     
     olap = 40
-    i = 5160 +j*olap
+    i = 70 +j*olap
     print(i)
     tX = np.reshape(data_align[i:i+40:1,:,:,:], [40,100,100])
     tX = np.array(tX, dtype= np.float64)
@@ -574,16 +620,12 @@ for j in range(5):
 
     tX1 = np.reshape(tX, [-1, 100,100,40])
 
-    
     tX1 = (tX1 - tX1.min())/(tX1.max() - tX1.min())
     
     olap =  np.int(olap*64/30)
-    
     # predd = neural_net(trX1) 
     predd = neural_net1(tX1) 
-    
     recPPG[-85:] = recPPG[-85:] + predd
-    
     recPPG = np.concatenate((recPPG, np.zeros([olap])))
     
     
@@ -651,12 +693,12 @@ conMod = tf.lite.TFLiteConverter.from_saved_model(new_path)
 
 # alternatively we can get from the model itself without any saving!!!
 
-# converter = tf.lite.TFLiteConverter.from_keras_model(neural_net1)
+# conMod = tf.lite.TFLiteConverter.from_keras_model(neural_net1)
 # tflite_model = converter.convert()
 
 
-# conMod.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS,
-#                                        tf.lite.OpsSet.SELECT_TF_OPS] # need this for some reason
+conMod.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS,
+                                        tf.lite.OpsSet.SELECT_TF_OPS] # need this for some reason
 
 tfLitMod =  conMod.convert()
 

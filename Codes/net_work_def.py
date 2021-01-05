@@ -375,7 +375,6 @@ class MtlNetwork_body(Model): # Vitamon network except inception layer
         x = self.avgpool2(x)
         
         
-        x = self.avgpool2(x)
         # later added        
 
         # print(x.shape)
@@ -512,4 +511,66 @@ class VitaMon2(Model):
         x = self.out1(x)
                 
         return x
+    
+    #%% Pruning modified network
+    
+class CNN_part(Model): # Vitamon network except inception layer
+    # Set layers.
+    def __init__(self):
+        super(CNN_part, self).__init__()
+        # Convolution Layer with 32 filters and a kernel size of 5.
+        self.conv1 = ConvBNRelu(32)
 
+        # Convolution Layer with 64 filters and a kernel size of 3.
+        self.conv2 = ConvBNRelu(64)
+        # Max Pooling (down-sampling) with kernel size of 2 and strides of 2. 
+        self.maxpool1 = layers.MaxPool2D(2, strides=2)
+        
+        self.conv3 = ConvBNRelu(64, kernel_size=3)
+        # Max Pooling (down-sampling) with kernel size of 2 and strides of 2. 
+
+        # Convolution Layer with 64 filters and a kernel size of 3.
+        self.conv4 = ConvBNRelu(96, kernel_size=3)
+        # Max Pooling (down-sampling) with kernel size of 2 and strides of 2. 
+        self.maxpool2 = layers.MaxPool2D(2, strides=2)
+        
+        self.incept1 = InceptMod(ch = 16, strides = 1)
+        
+        self.avgpool1 = layers.AveragePooling2D(2, strides= 2)
+        
+        self.incept2 = InceptMod(ch = 16, strides = 1)
+        
+        self.avgpool2 = layers.AveragePooling2D(2, strides= 2)
+        
+        self.flatten = layers.Flatten()
+            # Set forward pass.
+            
+    def call(self, x, training=False):
+        x = tf.reshape(x, [-1, 100, 100, 40])
+        
+        # x =self.concat1(xl)
+        
+        x = self.conv1(x, training=training)
+        # print(x.shape)
+        x = self.conv2(x, training=training)
+        x = self.maxpool1(x)
+        
+        x = self.conv3(x, training=training)
+        x = self.conv4(x, training=training)
+        
+        x = self.maxpool2(x)
+        
+        x = self.incept1(x, training = training)
+        
+        x = self.avgpool1(x)
+   
+        x = self.incept2(x, training = training)
+        
+        x = self.avgpool2(x)
+        # later added        
+        x = self.avgpool2(x)     
+        
+        x = self.flatten(x)
+
+        
+        return x
