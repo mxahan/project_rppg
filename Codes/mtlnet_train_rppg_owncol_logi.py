@@ -82,7 +82,7 @@ while(cap.isOpened()):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     
     gray  = gray[:,:,1]
-    gray =  gray[140:735, 720:1190]
+    gray =  gray[180:765, 720:1170]
     
    
     gray = cv2.resize(gray, im_size)
@@ -134,7 +134,7 @@ data_align = data[500 : 500 +np.int(end_point*30)+5]
 # 40 frames considered to to equivalent to 85 samples in PPg
 
 random.seed(1)
-rv = np.arange(0,4000, 2)+1000
+rv = np.arange(0,6000, 1)+601
 # np.random.shuffle(rv)
 
 
@@ -397,7 +397,7 @@ model_f.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/emon_logi'
 input("loading Check before loading as it may overload previous .....")
 
 model_f.load_weights(
-        '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/emon_logi')
+        '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/zahid_logi')
 
 #%% pruning attempt
 import tensorflow_model_optimization as tfmot
@@ -448,7 +448,7 @@ columns = 3
 rows = 3
 for j in range( 1, columns*rows +1 ):
     
-    i=  7500+j*20
+    i=  7050+j*20
     print(i)
     tX = np.reshape(data_align[i:i+40,:,:,:], [40,100,100])
     tX = np.array(tX, dtype= np.float64)
@@ -601,7 +601,7 @@ recPPG = np.zeros([85])
 for j in range(5):
     
     olap = 40
-    i = 70 +j*olap
+    i = 7120 -20+j*olap
     print(i)
     tX = np.reshape(data_align[i:i+40:1,:,:,:], [40,100,100])
     tX = np.array(tX, dtype= np.float64)
@@ -624,7 +624,7 @@ for j in range(5):
     
     olap =  np.int(olap*64/30)
     # predd = neural_net(trX1) 
-    predd = neural_net1(tX1) 
+    predd = model_f(tX1) 
     recPPG[-85:] = recPPG[-85:] + predd
     recPPG = np.concatenate((recPPG, np.zeros([olap])))
     
@@ -679,26 +679,28 @@ plt.show()
 # need to _set_inputs(tX1) before final compression 
 new_path =  os.path.join("../../../Dataset/Merl_Tim/NNSave/SavedWM")
 
+tX1 = np.array(tX1, dtype=np.float32) # holy crap I need this line
+
 neural_net1._set_inputs(tX1) # run this line once
 
 #%% save model
 
 # tf.saved_model.save(neural_net1, new_path)# this guy not works???
 # neural_net1.save(new_path)
-tf.keras.models.save_model(neural_net1, new_path)
+# tf.keras.models.save_model(neural_net1, new_path)
 # save as assets, variable, .pb file extension 
 
 # tf lite converter
-conMod = tf.lite.TFLiteConverter.from_saved_model(new_path)
-
+# conMod = tf.lite.TFLiteConverter.from_saved_model(new_path)
+# 
 # alternatively we can get from the model itself without any saving!!!
 
-# conMod = tf.lite.TFLiteConverter.from_keras_model(neural_net1)
+conMod = tf.lite.TFLiteConverter.from_keras_model(neural_net1)
 # tflite_model = converter.convert()
 
 
-conMod.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS,
-                                        tf.lite.OpsSet.SELECT_TF_OPS] # need this for some reason
+# conMod.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS,
+#                                         tf.lite.OpsSet.SELECT_TF_OPS] # need this for some reason
 
 tfLitMod =  conMod.convert()
 
@@ -713,7 +715,7 @@ import pathlib
 tflite_models_dir = pathlib.Path("../../../Dataset/Merl_Tim/NNSave/SavedWM")
 tflite_models_dir.mkdir(exist_ok=True, parents=True)
 
-tflite_model_file = tflite_models_dir/"masud_lite.tflite"
+tflite_model_file = tflite_models_dir/"masud_lite1.tflite"
 tflite_model_file.write_bytes(tfLitMod)
 
 # further optimization
@@ -723,7 +725,7 @@ conMod.target_spec.supported_types = [tf.float16]
 # save the model in **.tflite format
 
 tflite_fp16_model = conMod.convert()
-tflite_model_fp16_file = tflite_models_dir/"masud_lit_f16.tflite"
+tflite_model_fp16_file = tflite_models_dir/"masud_lit_f161.tflite"
 tflite_model_fp16_file.write_bytes(tflite_fp16_model)
 
 
