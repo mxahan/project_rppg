@@ -42,10 +42,10 @@ import pandas as pd
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_raw'
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_demosaiced'
 
-path_dir = '../../../Dataset/logi/emon/'
+path_dir = '../../../Dataset/logi/zahid/'
 
-ppgtotal =  pd.read_csv(path_dir +'emon/BVP.csv')
-EventMark = pd.read_csv(path_dir+'emon/tags.csv')
+ppgtotal =  pd.read_csv(path_dir +'zahid/BVP.csv')
+EventMark = pd.read_csv(path_dir+'zahid/tags.csv')
 
 dataPath = os.path.join(path_dir, '*.mov')
 
@@ -82,8 +82,7 @@ while(cap.isOpened()):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     
     gray  = gray[:,:,1]
-    gray =  gray[180:765, 720:1170]
-    
+    gray =  gray[160:910, 725:1190]
    
     gray = cv2.resize(gray, im_size)
     
@@ -114,7 +113,7 @@ data =  np.array(data)
 # check starting time in BVP.csv
 evmarknp =  EventMark.to_numpy()
 ppgnp =  ppgtotal.to_numpy()
-start_gap =  evmarknp[-2] -  1609183668
+start_gap =  evmarknp[-2] -  1609184521
 
 # check from BVP.csv column name. 
 # Check video starting point from watching the frame with the light event marker 
@@ -123,7 +122,7 @@ end_point =  evmarknp[-1] - evmarknp[-2]
 
 ppgnp_align =  ppgnp[np.int(start_gap*64):np.int((start_gap+end_point)*64)]
 
-data_align = data[500 : 500 +np.int(end_point*30)+5] 
+data_align = data[49 : 49 +np.int(end_point*30)+5] 
 
 #%% Prepare dataset for training
 
@@ -173,7 +172,7 @@ num_classes = 85
 num_features = 100*100*40 
 
 # Training parameters. Sunday, May 24, 2020 
-learning_rate = 0.0002 # start with 0.001
+learning_rate = 0.0005 # start with 0.001
 training_steps = 50000
 batch_size = 16
 display_step = 100
@@ -366,14 +365,16 @@ model__2 = tf.keras.Sequential([tf.keras.layers.Dense(512, activation='relu', in
                                 tf.keras.layers.Dense(128, activation='relu', input_shape=(512,)),
                                 tf.keras.layers.Dense(85, activation = 'tanh', input_shape=(128,))])
 
-model_f =  tf.keras.Sequential([model__1, model__2])
+# model_f =  tf.keras.Sequential([model__1, model__2])
+
+neural_net1 =  tf.keras.Sequential([model__1, model__2])
 
 #%% Training the actual network
 # single net
 # inarg = (neural_net, train_data)
 # multi-task net
 
-inarg = (model_f, model_f, train_data)
+inarg = (neural_net1, neural_net1, train_data)
 
 with tf.device('gpu:0'):
     train_nn(*inarg)
@@ -385,18 +386,18 @@ with tf.device('gpu:0'):
 
 input("saving Check the name again to save as it may overload previous .....")
 
-model_f.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/emon_logi')
+neural_net2.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/zahid_logi_prune')
 
 
 
-###my_checkpoint, test1, emon_withglass, emon_withoutgss, sreeni2, emon_lab, avijoy, masud, zahid_logi, emon_logi
+###my_checkpoint, test1, emon_withglass, emon_withoutgss, sreeni2, emon_lab, avijoy, masud, zahid_logi, emon_logi, zahid_logi_prune
 
 
 #%% Load weight load
 
 input("loading Check before loading as it may overload previous .....")
 
-model_f.load_weights(
+neural_net1.load_weights(
         '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/zahid_logi')
 
 #%% pruning attempt
@@ -405,30 +406,37 @@ import tensorflow_model_optimization as tfmot
 tfmot.sparsity.keras.prune_low_magnitude
 
 
-model_for_p = tf.keras.Sequential([tfmot.sparsity.keras.prune_low_magnitude(tf.keras.layers.Dense(512, activation='relu', input_shape=(576,))),
-                                tfmot.sparsity.keras.prune_low_magnitude(tf.keras.layers.Dense(128, activation='relu', input_shape=(512,))),
-                                tfmot.sparsity.keras.prune_low_magnitude(tf.keras.layers.Dense(85, activation = 'tanh', input_shape=(128,)))])
+# model_for_p = tf.keras.Sequential([tfmot.sparsity.keras.prune_low_magnitude(tf.keras.layers.Dense(512, activation='relu', input_shape=(576,))),
+#                                 tfmot.sparsity.keras.prune_low_magnitude(tf.keras.layers.Dense(128, activation='relu', input_shape=(512,))),
+#                                 tfmot.sparsity.keras.prune_low_magnitude(tf.keras.layers.Dense(85, activation = 'tanh', input_shape=(128,)))])
+
+
+model_for_p = tfmot.sparsity.keras.prune_low_magnitude(model__2)
+
 
 model_f_prune = tf.keras.Sequential([model__1, model_for_p])
 
-#%% Pruning continue
+#%% Pruning fine tune
 
 model_f_prune.compile(optimizer=optimizer,
               loss=RootMeanSquareLoss,
               metrics=['accuracy'])
 
-model_f_prune.fit(trX[1:500], trY[1:500],
-                  batch_size=5, epochs=2, validation_split=0.1,
+for i in range(6):
+    model_f_prune.fit(trX[i*900:(i+1)*900], trY[i*900:(i+1)*900],
+                  batch_size=5, epochs=2,
               callbacks=[tfmot.sparsity.keras.UpdatePruningStep()])
+
+
 
 # wow so far works
 
 #%% Pruning Continue
 model_for_export =  tfmot.sparsity.keras.strip_pruning(model_for_p)
 
-model_4 =  tf.keras.Sequential([model__1, model_for_export])
+neural_net2 =  tf.keras.Sequential([model__1, model_for_export])
 
-model_4.compile(optimizer=optimizer,
+neural_net2.compile(optimizer=optimizer,
               loss=RootMeanSquareLoss,
               metrics=['accuracy'])
 #%% Random testing
@@ -448,7 +456,7 @@ columns = 3
 rows = 3
 for j in range( 1, columns*rows +1 ):
     
-    i=  7050+j*20
+    i=  5055+j*20
     print(i)
     tX = np.reshape(data_align[i:i+40,:,:,:], [40,100,100])
     tX = np.array(tX, dtype= np.float64)
@@ -476,7 +484,10 @@ for j in range( 1, columns*rows +1 ):
     # predd = neural_net(trX1) 
     
     
-    predd = model_f(tX1) 
+    predd = neural_net2(tX1) 
+    
+    
+    
     plt.plot(predd[0])
 
     plt.legend(["Ground Truth", "Predicted"])
@@ -601,7 +612,7 @@ recPPG = np.zeros([85])
 for j in range(5):
     
     olap = 40
-    i = 7120 -20+j*olap
+    i = 7480 -20+j*olap
     print(i)
     tX = np.reshape(data_align[i:i+40:1,:,:,:], [40,100,100])
     tX = np.array(tX, dtype= np.float64)
@@ -624,7 +635,7 @@ for j in range(5):
     
     olap =  np.int(olap*64/30)
     # predd = neural_net(trX1) 
-    predd = model_f(tX1) 
+    predd = neural_net2(tX1) 
     recPPG[-85:] = recPPG[-85:] + predd
     recPPG = np.concatenate((recPPG, np.zeros([olap])))
     
@@ -681,7 +692,7 @@ new_path =  os.path.join("../../../Dataset/Merl_Tim/NNSave/SavedWM")
 
 tX1 = np.array(tX1, dtype=np.float32) # holy crap I need this line
 
-neural_net1._set_inputs(tX1) # run this line once
+neural_net2._set_inputs(tX1) # run this line once
 
 #%% save model
 
@@ -695,7 +706,7 @@ neural_net1._set_inputs(tX1) # run this line once
 # 
 # alternatively we can get from the model itself without any saving!!!
 
-conMod = tf.lite.TFLiteConverter.from_keras_model(neural_net1)
+conMod = tf.lite.TFLiteConverter.from_keras_model(neural_net2)
 # tflite_model = converter.convert()
 
 
@@ -704,7 +715,7 @@ conMod = tf.lite.TFLiteConverter.from_keras_model(neural_net1)
 
 tfLitMod =  conMod.convert()
 
-neural_net1.layers[0].summary()
+neural_net2.layers[0].summary()
 
 #%% lite model save both all and FP16
 
@@ -715,7 +726,7 @@ import pathlib
 tflite_models_dir = pathlib.Path("../../../Dataset/Merl_Tim/NNSave/SavedWM")
 tflite_models_dir.mkdir(exist_ok=True, parents=True)
 
-tflite_model_file = tflite_models_dir/"masud_lite1.tflite"
+tflite_model_file = tflite_models_dir/"emon_lite_p.tflite"
 tflite_model_file.write_bytes(tfLitMod)
 
 # further optimization
@@ -725,7 +736,7 @@ conMod.target_spec.supported_types = [tf.float16]
 # save the model in **.tflite format
 
 tflite_fp16_model = conMod.convert()
-tflite_model_fp16_file = tflite_models_dir/"masud_lit_f161.tflite"
+tflite_model_fp16_file = tflite_models_dir/"emon_lit_p_f16.tflite"
 tflite_model_fp16_file.write_bytes(tflite_fp16_model)
 
 
