@@ -10,7 +10,7 @@ Please contact us to get the access to rPPG data. Upon receiving request and agr
 The volunteers required to sit still in front of camera wearing the Empatica in a laboratory room with Artificial lights. The average data collection takes 10 minutes per subject in each trail.
 
 
-We have received the kind consent of the volunteers to collect their data and followed IRB protocol during collection.
+We have received the kind consent of the volunteers to collect their data and followed instructional Review Board (IRB) protocol during collection.
 
 Please do not use any volunteers direct images in the presentation or papers.
 
