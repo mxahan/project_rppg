@@ -1,11 +1,11 @@
 # project_rppg
 
-In this project I aim to implement multi region base neural network to extract robust PPG from the Heart Rate.
+In this project, We aim to implement multi region base neural network to extract robust PPG from the Heart Rate.
 
 
 # Data:
 
-Please contact us to get the access to rPPG data. We will share the drive link to download the videos and corresponding Empatica PPG signal. The instructions are there to align the video with the PPG signal for training and validation.
+Please contact us to get the access to rPPG data. Upon receiving request and agreement, we will share the drive link to download the videos and corresponding Empatica PPG signal. The instructions and python source code will also be provided to align the video with the PPG signal for training and validation.
 
 The volunteers required to sit still in front of camera wearing the Empatica in a laboratory room with Artificial lights. The average data collection takes 10 minutes per subject in each trail.
 
