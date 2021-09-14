@@ -48,7 +48,7 @@ Figure: Overall result summary using the CamSense Model and its design choices.
 
 <img src="Images/DataSet_.png">
 
-Figure: rPPG data. Their is PPG corresponding the video frames. 
+Figure: Sample rPPG data to learn complete PPG information from raw video frames. There is PPG corresponding the video frames. 
 
 
 To  collect  video  with  enough  PPG  signal and well-aligned PPG, we collect simultaneous PPG and video sensor  data.  We  collected  HD  video  using  RGB  stationery(in  a  stand)  DSLR  (Canon  D3500)  at  30  fps  in  a  laboratory setup under artificial light for 5 minutes while each volunteer was  sitting  idly  on  a  chair  three  feet  away  in  front  of  the camera.  Concurrently,  Empatica  E4  Wristwatch  tracks  the wrist PPG sampled at 64 Hz from volunteers’ dominant hand.To  align  the  video  and  PPG  data  to  the  same  time-stamp, we  leveraged  the  event  marker  feature  in  the Empatica  E4.During  that,  the  volunteers  count  to  ten  for  10  seconds.  We identified  the  exact  position  of  the  event  marker  press  of Empatica E4 by locating event marker light at particular video frames.  The  Empatica  E4  locates  the  exact  PPG  position  for the  event  markers  pressed.  This  allows  us  to  align  PPG  andvideo  with  an  error  margin  of  1/30  seconds.  
