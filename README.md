@@ -10,6 +10,9 @@ In this project, We aim to implement multi region base neural network to extract
 
 # Our Methodologies
 
+Data collection and model development
+
+Overview of Model development
 
 # Data Collection:
 
