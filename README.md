@@ -1,18 +1,48 @@
-# project_rppg
+# MPSC lab: rPPG
 
-In this project, We aim to implement multi region base neural network to extract robust PPG from the Heart Rate.
+In this research work, We aim to implement multi task learning based neural network to extract robust PPG from the Heart Rate.
+
+This cite contains the codes to reproduce the results, collected data description, and sample analysis resutls. 
 
 
-# Introduction
+# Abstract
+
+Remote Photoplythysmograpy (rPPG) systems enable contactless heart activities (heart rate, heart rate variability) monitoring by estimating Photoplethysmogram (PPG) signal, blood's volumetric variation in the skin tissues, leveraging the occurred diffused reflection from the exposed skin in skin video. They can primarily monitor heart activities using off-the-shelf video sensors while ensuring the safety of concerned individuals during contagious diseases. However, developing the rPPG systems is challenging due to the marginal presence of PPG signal in the video stream, data variations, limited and noisy rPPG data. In this regard, we propose an end-to-end deep learning-based approach for camera-based contactless sensing "CamSense" for recovering PPG signals from consecutive raw video frames. Firstly, we design and validate a personalized model to bypass data variation and noise across data collection with a modified objective function under realistic settings. Secondly, we explore and design multi-task learning (MTL) network to address the rPPG data variabilities for learning generalized rPPG representations. We also propose a transfer learning approach that integrates an efficient weight initialization to scale the rPPG systems under different domains and settings for fast and generalized training and inferences. Finally, we propose a new 'in-house' rPPG dataset containing multiple RGB videos and corresponding PPG ground truth for end-end rPPG network training. We evaluate CamSense on two public datasets and our 'in-house' dataset across multiple subjects and heterogeneous camera sensors such as DSLR and near-infrared sensors with different ground truth provider PPG sensors (wrist, finger) to showcase its' generalizability. We further validate our components' design choices by performing ablation studies using different settings. Our developed model approximates accurate PPG signals with an average root mean square error (RMSE) of $0.08$, $0.10$, and $0.06$  for personalized models, MTL model, and transfer learnings using the held-out test videos.
 
 ### rPPG
 
+rPPG (remote Photoplethysmogram) signal measures the volumetric variation in the uncovered skin tissues from the video streams. This blood variation in the skin is the direct result of rhythmic heart activities.
 
 # Our Methodologies
 
-Data collection and model development
 
-Overview of Model development
+<img src="Images/overview_rPPG_extraction.png" width="600" height="200">
+
+Figure: Our Overview of data collection and model development.
+
+
+
+
+<img src="Images/overView_MTL.png" width="800" height="400">
+
+
+Figure: Utilization of the Multi head network to learn from multiple video simultaneous in the CamSense. The Multi head allows the model to disregards the data alignment issues and encounter sensor heterogeneity. The architecture also allows us to combine data from multiple sources.
+
+# Sample results
+<img src="Images/sample_result.png">
+
+Figure: Sample result of PPG approximation using the CamSense Network.
+
+
+<img src ="Images/tx_learning.png" width = "800">
+
+Figure: Sample result of PPG approximation using the transfer learning using the base CamSense Network.
+
+
+<img src ="Images/overall_stats.png">
+
+Figure: Overall result summary using the CamSense Model and its design choices.
+
 
 # Data Collection:
 
@@ -28,17 +58,13 @@ The  dataset consists of two females, six males volunteers. Our dataset has incl
 
 
 
+We have received the kind consent of the volunteers to collect their data and followed instructional Review Board (IRB) protocol during the data collection.
 
 
 Please contact us to get the access to rPPG data. Upon receiving request and agreement, we will share the drive link to download the videos and corresponding Empatica PPG signal. The instructions and python source code will also be provided to align the video with the PPG signal for training and validation.
 
-The volunteers required to sit still in front of camera wearing the Empatica in a laboratory room with Artificial lights. The average data collection takes 10 minutes per subject in each trail.
 
-
-We have received the kind consent of the volunteers to collect their data and followed instructional Review Board (IRB) protocol during collection.
-
-Please do not use any volunteers direct images in the presentation or papers.
-
-## Other Data and Bench-Marking
 
 # Citation:
+
+[Coming Soon]
