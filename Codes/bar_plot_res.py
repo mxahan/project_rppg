@@ -47,15 +47,15 @@ ax4 = fig.add_subplot(121)
 
 ind = np.arange(N) 
 width = 0.5      
-plt.bar(ind, TP, width/2.5)
-plt.bar(ind + width/2, FP, width/2.5)
-plt.bar(ind + 2*width/2, FN, width/2.5)
+plt.bar(ind, TP, width/2.5, hatch ='/')
+plt.bar(ind + width/2, FP, width/2.5, hatch ='-')
+plt.bar(ind + 2*width/2, FN, width/2.5, hatch ='x')
 
 plt.yticks(fontsize=50)
 plt.ylabel('Percentage', fontweight="bold", fontsize=50)
-plt.title('In house dataset',fontsize=40, fontweight="bold")
+plt.title('(a) MPSC-rPPG dataset',fontsize=35, fontweight="bold")
 
-plt.xlabel("Collected Dataset", fontsize=40, fontweight="bold")
+#plt.xlabel("Collected Dataset", fontsize=40, fontweight="bold")
 
 xlabels = ('Personal', 'Tx from\n person', 'Tx from \n MTL')
 
@@ -75,16 +75,16 @@ ax2 = fig.add_subplot(122)
 
 ind = np.arange(N)      
 width = 0.5    
-plt.bar(ind, TP, width/4, label='TP peaks')
-plt.bar(ind + width/3, FP, width/4, label='FP')
-plt.bar(ind + 2*width/3, FN, width/4, label='FN')
+plt.bar(ind, TP, width/4, label='TP peaks', hatch ='/')
+plt.bar(ind + width/3, FP, width/4, label='FP', hatch ='-')
+plt.bar(ind + 2*width/3, FN, width/4, label='FN', hatch ='x')
 
 plt.yticks(fontsize=50)
 
 # plt.ylabel('Scores')
-plt.title('UBFC-RPPG dataset', fontsize=40, fontweight="bold")
+plt.title('(b) UBFC-RPPG dataset', fontsize=35, fontweight="bold")
 
-plt.xlabel("UBFC-rPPG Dataset", fontsize=40, fontweight="bold")
+#plt.xlabel("UBFC-rPPG Dataset", fontsize=35, fontweight="bold")
 
 
 xlabels = ( 'Tx from \n person', 'Tx from \n MTL')
@@ -92,9 +92,9 @@ xlabels = ( 'Tx from \n person', 'Tx from \n MTL')
 plt.xticks(ind + width/3, xlabels)
 ax2.set_xticklabels(xlabels, rotation=45, fontsize=35)
 
-plt.legend(loc='best', ncol=3, fontsize=30)
+# plt.legend(loc='best', ncol=3, fontsize=30)
 
-plt.savefig('bar_chart_sample1.eps', format = 'eps', dpi= 500, bbox_inches="tight")
+plt.savefig('bar_chart_sample1.svg', format = 'svg', dpi= 500, bbox_inches="tight")
 
 plt.show()
 
@@ -117,15 +117,15 @@ FN = np.array([6, 29, 41])/104*100
 
 ind = np.arange(N) 
 width = 0.5      
-plt.bar(ind, TP, width/2.5)
-plt.bar(ind + width/2, FP, width/2.5)
-plt.bar(ind + 2*width/2, FN, width/2.5)
+plt.bar(ind, TP, width/2.5, hatch ='/')
+plt.bar(ind + width/2, FP, width/2.5, hatch = '-')
+plt.bar(ind + 2*width/2, FN, width/2.5, hatch = 'x')
 
 plt.yticks(fontsize=30)
 plt.ylabel('Percentage', fontweight="bold", fontsize=40)
-plt.title('Ablation Study for MERL',fontsize=40, fontweight="bold")
+plt.title('(c) Ablation Study: MERL',fontsize=35, fontweight="bold")
 
-plt.xlabel("MERL dataset", fontsize=40, fontweight="bold")
+#plt.xlabel("MERL dataset", fontsize=35, fontweight="bold")
 
 xlabels = ('tanh+MSE\n+ Sign loss', 'ReLU+MSE\n+ Sign loss', 'tanh+MSE\n')
 
@@ -142,24 +142,24 @@ FN = np.array([29, 29, 31])/201*100
 
 ind = np.arange(N) 
 width = 0.5      
-plt.bar(ind, TP, width/2.5, label = "TP")
-plt.bar(ind + width/2, FP, width/2.5, label = "FP")
-plt.bar(ind + 2*width/2, FN, width/2.5, label = "FN")
+plt.bar(ind, TP, width/2.5, label = "TP", hatch ='/')
+plt.bar(ind + width/2, FP, width/2.5, label = "FP", hatch ='-')
+plt.bar(ind + 2*width/2, FN, width/2.5, label = "FN", hatch ='x')
 plt.yticks(fontsize=30)
 
 # plt.ylabel('Percentage', fontweight="bold", fontsize=30)
-plt.title('MERL personalized Result',fontsize=40, fontweight="bold")
+plt.title('(d) Personalized Result: MERL',fontsize=35, fontweight="bold")
 
-plt.xlabel("MERL dataset", fontsize=40, fontweight="bold")
+#plt.xlabel("MERL dataset", fontsize=35, fontweight="bold")
 
 xlabels = ('RGB', 'RGB \n demosai.', 'NIR')
 
 plt.xticks(ind + width/3, xlabels, fontsize=40)
 ax1.set_xticklabels(xlabels, rotation=45, fontsize=35)
 
-plt.legend(loc='best', ncol=3, fontsize=30)
+#plt.legend(loc='best', ncol=3, fontsize=30)
 
-plt.savefig('bar_chart_sample2.eps', format = 'eps', dpi= 500, bbox_inches="tight")
+plt.savefig('bar_chart_sample2.svg', format = 'svg', dpi= 500, bbox_inches="tight")
 
 plt.show()
 
@@ -182,15 +182,15 @@ ax1 = fig.add_subplot()
 
 ind = np.arange(5) 
 width = 0.5      
-plt.bar(ind, TP, width/2.5, label = "TP")
-plt.bar(ind + width/2, FP, width/2.5, label = "FP")
-plt.bar(ind + 2*width/2, FN, width/2.5, label = "FN")
+plt.bar(ind, TP, width/2.5, label = "TP", hatch ='/')
+plt.bar(ind + width/2, FP, width/2.5, label = "FP", hatch = '-')
+plt.bar(ind + 2*width/2, FN, width/2.5, label = "FN", hatch = 'x')
 
 plt.yticks(fontsize=40)
 plt.ylabel('Percentage', fontweight="bold", fontsize=40)
-plt.title('Transfer result for MERL',fontsize=40, fontweight="bold")
+plt.title('(e) Transfer learning result: MERL',fontsize=35, fontweight="bold")
 
-plt.xlabel("MERL dataset", fontsize=30, fontweight="bold")
+#plt.xlabel("MERL dataset", fontsize=30, fontweight="bold")
 
 xlabels = ('RGB Tx', 'RGB to\n NIR', 'RGB to \n demos.', 'RGB MTL', 'NIR MTL')
 
@@ -199,7 +199,7 @@ ax1.set_xticklabels(xlabels, rotation=45, fontsize=35)
 
 plt.legend(loc='best', ncol=3, fontsize=30)
 
-plt.savefig('bar_chart_sample3.eps', bbox_inches="tight", format = 'eps', dpi= 500)
+plt.savefig('bar_chart_sample3.svg', bbox_inches="tight", format = 'svg', dpi= 500)
 # 
 plt.show()
 
