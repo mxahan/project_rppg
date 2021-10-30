@@ -574,3 +574,5 @@ class CNN_part(Model): # Vitamon network except inception layer
 
         
         return x
+    
+    

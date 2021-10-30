@@ -5,6 +5,7 @@ Created on Thu Apr 23 10:06:57 2020
 
 @author: zahid
 """
+
 #%% Load libraries
 
 import tensorflow as tf
@@ -40,10 +41,10 @@ import pandas as pd
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_raw'
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_demosaiced'
 
-path_dir = '../../../Dataset/Personal_collection/sub4_rini/col1/'
+path_dir = '../../../Dataset/Personal_collection/sub2_emon/col3/'
 
-ppgtotal =  pd.read_csv(path_dir +'rini1/BVP.csv')
-EventMark = pd.read_csv(path_dir+'rini1/tags.csv')
+ppgtotal =  pd.read_csv(path_dir +'Emon_lab/BVP.csv')
+EventMark = pd.read_csv(path_dir+'Emon_lab/tags.csv')
 
 dataPath = os.path.join(path_dir, '*.MOV')
 
@@ -79,17 +80,11 @@ while(cap.isOpened()):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     
     gray  = gray[:,:,1]
-    gray =  gray[:, 400:1400]
-    
+    gray =  gray[:900, 600:1500]
     gray = cv2.resize(gray, im_size)
-    
     # pdb.set_trace()
-   
     data.append(gray)
-    
     cv2.imshow('frame', gray)
-    
-    
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
@@ -109,22 +104,20 @@ data =  np.array(data)
 
 evmarknp =  EventMark.to_numpy()
 ppgnp =  ppgtotal.to_numpy()
-start_gap =  evmarknp[1] -  1595391050
+start_gap =  evmarknp[0] -  1599849555
 
-# check from BVP.csv column name. 
-# Check video starting point from watching the frame with the light event marker 
-
-end_point =  evmarknp[2] - evmarknp[1]
+end_point =  evmarknp[1] - evmarknp[0]
 
 ppgnp_align =  ppgnp[np.int(start_gap*64):np.int((start_gap+end_point)*64)]
-data_align = data[216 : 216 +np.int(end_point*30)+5]  
+
+data_align = data[176 : 176 +np.int(end_point*30)+5]  
 
 #%% Prepare dataset for training
 
 # 40 frames considered to to equivalent to 85 samples in PPg
 
 random.seed(1)
-rv = np.arange(0,4000, 2)+2000
+rv = np.arange(0,6000, 1)+500
 np.random.shuffle(rv)
 
 
@@ -132,31 +125,23 @@ np.random.shuffle(rv)
 rv =  np.array(rv)
 pulR = np.reshape(ppgnp_align, [ppgnp_align.shape[0],1]) # take 45 frames together
 #      #%%
-
 if 'trainX' in locals():
     print("already exists")
 else:
     trainX = []
     trainY = []
 
-
 data_align = data_align[:,:,:,np.newaxis]
-
 frame_cons = 40 # how many frame to consider at a time
-
 
 # Prepare the training instanses
 for j,i in enumerate(rv):
-    
     img = np.reshape(data_align[i:i+frame_cons,:,:,0], [frame_cons, *im_size])
     img = np.moveaxis(img, 0,-1)
     trainX.append(img)
-    
     p_point = np.int(np.round(i*64/30))
-    
     ppg = pulR[p_point: p_point+85, 0]
     trainY.append(ppg)
-
 
 
 #%% Some parameter definition
@@ -191,7 +176,11 @@ trX, teX, trY, teY = train_test_split(trainX , trainY,
 # Run only for person 1
 
 train_data = tf.data.Dataset.from_tensor_slices((trX, trY))
-train_data = train_data.repeat().shuffle(buffer_size=100,
+# train_data = train_data.repeat().shuffle(buffer_size=100,
+#                                          seed= 8).batch(batch_size).prefetch(1)
+
+
+train_data = train_data.shuffle(buffer_size=100,
                                          seed= 8).batch(batch_size).prefetch(1)
 
 
@@ -199,19 +188,19 @@ train_data = train_data.repeat().shuffle(buffer_size=100,
 #%% MTL for second dataset (run till trainX and follow from here again)
 # Make sure this is connected to person 2
 
-trainX = np.array(trainX, dtype = np.float32)
-trainY = np.array(trainY, dtype = np.float32)
+# trainX = np.array(trainX, dtype = np.float32)
+# trainY = np.array(trainY, dtype = np.float32)
 
 
-trainY = trainY - trainY.min(axis = 1)[:, np.newaxis]
-trainY = (trainY/(trainY.max(axis = 1)[:, np.newaxis]+ 10**-5))*2-1
+# trainY = trainY - trainY.min(axis = 1)[:, np.newaxis]
+# trainY = (trainY/(trainY.max(axis = 1)[:, np.newaxis]+ 10**-5))*2-1
 
-trainX = (trainX-trainX.min())
+# trainX = (trainX-trainX.min())
 
-trainX = trainX/ trainX.max()
+# trainX = trainX/ trainX.max()
 
-trX1, teX1, trY1, teY1 = train_test_split(trainX , trainY, 
-                                      test_size = .1, random_state = 42)
+# trX1, teX1, trY1, teY1 = train_test_split(trainX , trainY, 
+#                                       test_size = .1, random_state = 42)
 
 
 
@@ -235,8 +224,22 @@ def RootMeanSquareLoss(x,y):
     # print(tf.reduce_mean(loss), tf.reduce_mean(loss2))
     return loss + 0.5*loss2
 
+def RootMeanSquareLoss1(y,x):
+    
+    # pdb.set_trace()  
+    loss = tf.keras.losses.MSE(y_true = y, y_pred =x)  # initial one
+    #return tf.reduce_mean(loss)  # some other shape similarity
+     
+    loss2 = tf.reduce_mean((tf.math.abs(tf.math.sign(y))-tf.math.sign(tf.math.multiply(x,y))),axis = -1)
+    # print(loss2.shape)
+    
+    # print(tf.reduce_mean(loss), tf.reduce_mean(loss2))
+    return loss + 0.5*loss2
+
+
 
 #%%  Optimizer Definition
+
 optimizer  = tf.optimizers.SGD(learning_rate*2)
 optimizer1 = tf.optimizers.SGD(learning_rate/2)
 
@@ -246,8 +249,6 @@ def run_optimization(neural_net, x,y):
     with tf.GradientTape() as g:
         pred =  neural_net(x, training = True)
         loss =  RootMeanSquareLoss(y, pred)  # change for mtl
-        
-    
     
     convtrain_variables =  neural_net.layers[0].trainable_variables
     fcntrain_variables =  neural_net.layers[1].trainable_variables
@@ -297,9 +298,9 @@ def train_nn(neural_net1, neural_net2, train_data):
         run_optimization(neural_net1, batch_x, batch_y)
         
         # body + Head2 training
-        i = randint(0,trX1.shape[0]-20)
-        batch_x1 = tf.convert_to_tensor(trX1[i:i+batch_size])
-        batch_y1 = tf.convert_to_tensor(trY1[i:i+batch_size])
+        i = randint(0,trX.shape[0]-20)
+        batch_x1 = tf.convert_to_tensor(trX[i:i+batch_size])
+        batch_y1 = tf.convert_to_tensor(trY[i:i+batch_size])
         run_optimization(neural_net2, batch_x1, batch_y1)
         
         
@@ -315,8 +316,136 @@ def Val_loss (neural_net, testX, testY):
     pred = neural_net(testX, training = False)
     loss = RootMeanSquareLoss(testY, pred)
     val_loss.append(tf.reduce_mean(loss))
+
+
+#%% Keras Model Replicate
+
+import keras
+
+from keras.models import Model
+from keras.layers import Conv2D, MaxPool2D,  \
+    Dropout, Dense, Input, concatenate,      \
+    GlobalAveragePooling2D, AveragePooling2D,\
+    Flatten, BatchNormalization, ReLU, AveragePooling2D
+
+kernel_init ='he_uniform'
+
+bias_init ='he_uniform'
+
+def inception_module(x,
+                     filters_1x1,
+                     filters_3x3,
+                     filters_5x5_reduce,
+                     filters_5x5 ,
+                     filters_pool_proj,
+                     strides =1,
+                     name=None):
     
+    conv_1x1 = Conv2D(filters_1x1, kernel_size=1, padding='same', activation='relu', kernel_initializer=kernel_init, bias_initializer=bias_init, strides= strides)(x)
     
+    conv_3x3 = Conv2D(filters_3x3, kernel_size = 3, padding='same', activation='relu', kernel_initializer=kernel_init, bias_initializer=bias_init, strides =strides)(x)
+
+    conv_5x5 = Conv2D(filters_5x5_reduce, kernel_size= 5, padding='same', activation='relu', kernel_initializer=kernel_init, bias_initializer=bias_init, strides =strides)(x)
+    conv_5x5 = Conv2D(filters_5x5, kernel_size = 3, padding='same', activation='relu', kernel_initializer=kernel_init, bias_initializer=bias_init, strides =strides)(conv_5x5)
+
+    pool_proj = MaxPool2D(3, strides=(1, 1), padding='same')(x)
+    pool_proj = Conv2D(filters_pool_proj, (1, 1), padding='same', activation='relu', kernel_initializer=kernel_init, bias_initializer=bias_init, strides =strides)(pool_proj)
+
+    output = concatenate([conv_1x1, conv_3x3, conv_5x5, pool_proj], axis=3, name=name)
+    
+    return output
+
+def convBnRelu(x, 
+               ch, 
+               kernel_size = 3, 
+               strides = 1,
+               padding = 'same'):
+    
+    output = Conv2D(ch, kernel_size =  kernel_size, strides=strides, padding=padding,
+                          kernel_regularizer=tf.keras.regularizers.l2(0.01))(x)
+    output = BatchNormalization()(output)
+    output = ReLU()(output)
+    return output
+
+
+input_layer = Input(shape=(100, 100, 40))
+
+x = convBnRelu(x= input_layer, ch = 32)
+
+x = convBnRelu(x= x, ch = 64)
+
+
+x = MaxPool2D(2, strides=2)(x)
+
+x = convBnRelu(x= x, ch = 64)
+
+x = convBnRelu(x= x, ch = 96)
+
+
+x = MaxPool2D(2, strides=2)(x)
+
+
+
+x = inception_module(x,
+                     filters_1x1=16,
+                     filters_3x3=16,
+                     filters_5x5_reduce=16,
+                     filters_5x5=16,
+                     filters_pool_proj=16,
+                     strides =1,
+                     name='inception_3a')
+
+x = AveragePooling2D(2, strides = 2)(x)
+
+x = inception_module(x,
+                     filters_1x1=16,
+                     filters_3x3=16,
+                     filters_5x5_reduce=16,
+                     filters_5x5=16,
+                     filters_pool_proj=16,
+                     strides =1,
+                     name='inception_3b')
+
+x = AveragePooling2D(2, strides = 2)(x)
+
+x = AveragePooling2D(2, strides = 2)(x)
+
+x = Flatten()(x)
+
+
+
+x = Dense(512, activation='relu')(x)
+
+
+x = Dense(128, activation='relu')(x)
+
+
+x = Dense(85, activation='tanh')(x)
+
+
+
+model = Model(input_layer, x, name='inception_v1')
+
+model.summary()
+
+#%%
+
+optimizer  = tf.optimizers.SGD(learning_rate)
+
+model.compile(optimizer=optimizer,
+              loss=RootMeanSquareLoss1,
+              metrics=['mse'])
+
+#%% 
+with tf.device('gpu:0/'): 
+    model.fit(
+        # trainX, trainY,
+        train_data,
+        batch_size = 16,
+        # validation_split=0.1,
+        epochs = 2
+        )
+
 #%% Bringing Network
 from net_work_def import  MtlNetwork_head, MtlNetwork_body
 # power of CNN
@@ -412,7 +541,7 @@ rows = 3
 for j in range( 1, columns*rows +1 ):
     
     i =randint( 50, 5100)
-    i=  7000+j*10
+    i=  7500+j*40
     print(i)
     tX = np.reshape(data_align[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
@@ -439,7 +568,7 @@ for j in range( 1, columns*rows +1 ):
     # predd = neural_net(trX1) 
     
     
-    predd = neural_net1(tX1) 
+    predd = model(tX1) 
     plt.plot(predd[0])
 
     plt.legend(["Ground Truth", "Predicted"])
@@ -452,6 +581,43 @@ for j in range( 1, columns*rows +1 ):
 # plt.savefig('sub4goodres.eps', format = 'eps', dpi= 600)
 plt.show()
 
+#%% Saving results
+
+pred_train = []
+gt_train = []
+
+
+for j in range( 1,2000):
+    
+    #i =randint( 50, 5100)
+    i=  5050+j
+
+    tX = np.reshape(data_align[i:i+40,:,:,:], [40,100,100])
+    tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
+    
+    p_point = np.int(np.round(i*64/30))
+    
+    gt = pulR[p_point: p_point+85, 0]
+
+    gt = (gt-gt.min())/(gt.max()-gt.min())
+    
+    gt = gt.reshape([1,85])
+
+    tX1 = np.reshape(tX, [-1, 100,100,40])
+    
+    tX1 = (tX1 - tX1.min())/(tX1.max() - tX1.min())
+    
+
+    # predd = neural_net(trX1) 
+    
+    
+    predd = model(tX1) 
+    
+    gt_train.append(gt)
+    pred_train.append(predd)
+
+# plt.savefig('sub4goodres.eps', format = 'eps', dpi= 600)
+plt.show()
 
 
 
@@ -561,7 +727,7 @@ recPPG = np.zeros([85])
 for j in range(5):
     
     olap = 40
-    i = 7200 +j*olap
+    i = 2000 +j*olap
     print(i)
     tX = np.reshape(data_align[i:i+40,:,:,:], [40,100,100])
     tX = np.moveaxis(tX, 0,-1) # very important line in axis changeing 
@@ -583,7 +749,7 @@ for j in range(5):
     olap =  np.int(olap*64/30)
     
     # predd = neural_net(trX1) 
-    predd = neural_net2(tX1)
+    predd = neural_net1(tX1)
     
     recPPG[-85:] = recPPG[-85:] + predd
     

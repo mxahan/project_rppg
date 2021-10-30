@@ -5,6 +5,7 @@ Created on Thu Apr 23 10:06:57 2020
 
 @author: zahid
 """
+
 #%% libraries
 
 import tensorflow as tf
@@ -361,13 +362,24 @@ from net_work_def import CNN_part
 
 model__1 = CNN_part()
 
+model__o1 = CNN_part()
+
 model__2 = tf.keras.Sequential([tf.keras.layers.Dense(512, activation='relu', input_shape=(576,)),
                                 tf.keras.layers.Dense(128, activation='relu', input_shape=(512,)),
                                 tf.keras.layers.Dense(85, activation = 'tanh', input_shape=(128,))])
 
+
+model__o2 = tf.keras.Sequential([tf.keras.layers.Dense(512, activation='relu', input_shape=(576,)),
+                                tf.keras.layers.Dense(128, activation='relu', input_shape=(512,)),
+                                tf.keras.layers.Dense(85, activation = 'tanh', input_shape=(128,))])
+
+
 # model_f =  tf.keras.Sequential([model__1, model__2])
 
-neural_net1 =  tf.keras.Sequential([model__1, model__2])
+neural_net1 =  tf.keras.Sequential([model__o1, model__o2])
+#%% Network to prune
+
+neural_net2 =  tf.keras.Sequential([model__1, model__2])
 
 #%% Training the actual network
 # single net
@@ -386,7 +398,7 @@ with tf.device('gpu:0'):
 
 input("saving Check the name again to save as it may overload previous .....")
 
-neural_net2.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/zahid_logi_prune')
+model.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/zahid_keras')
 
 
 
@@ -397,48 +409,252 @@ neural_net2.save_weights('../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/zahid_
 
 input("loading Check before loading as it may overload previous .....")
 
-neural_net1.load_weights(
-        '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/zahid_logi')
+model.load_weights(
+        '../../../Dataset/Merl_Tim/NNsave/SavedWM/Models/zahid_keras')
 
-#%% pruning attempt
+#%% full model pruning 
+
+import tensorflow_model_optimization as tfmot
+
+prune_low_magnitude = tfmot.sparsity.keras.prune_low_magnitude
+
+pruning_params = {
+      'pruning_schedule': tfmot.sparsity.keras.ConstantSparsity(0.5, begin_step=0, frequency=100)
+  }
+
+callbacks = [
+  tfmot.sparsity.keras.UpdatePruningStep()
+]
+
+pruned_model = prune_low_magnitude(model, **pruning_params)
+
+# Use smaller learning rate for fine-tuning
+opt = tf.keras.optimizers.Adam(learning_rate=1e-5)
+
+pruned_model.compile(
+  loss=RootMeanSquareLoss1,
+  optimizer=opt,
+  metrics=['mse'])
+
+pruned_model.summary()
+
+
+#%% FTune
+
+pruned_model.fit(
+  train_data,
+  epochs=3,
+  # validation_split=0.1,
+  callbacks=callbacks)
+
+#%% helper 
+
+def print_model_weights_sparsity(model):
+
+    for layer in model.layers:
+        if isinstance(layer, tf.keras.layers.Wrapper):
+            weights = layer.trainable_weights
+        else:
+            weights = layer.weights
+        for weight in weights:
+            if "kernel" not in weight.name or "centroid" in weight.name:
+                continue
+            weight_size = weight.numpy().size
+            zero_num = np.count_nonzero(weight == 0)
+            print(
+                f"{weight.name}: {zero_num/weight_size:.2%} sparsity ",
+                f"({zero_num}/{weight_size})",
+            )
+            
+stripped_pruned_model = tfmot.sparsity.keras.strip_pruning(pruned_model)
+
+print_model_weights_sparsity(stripped_pruned_model)
+
+stripped_pruned_model_copy = tf.keras.models.clone_model(stripped_pruned_model)
+stripped_pruned_model_copy.set_weights(stripped_pruned_model.get_weights())
+
+#%% pruning attempt OLDER
 import tensorflow_model_optimization as tfmot
 
 tfmot.sparsity.keras.prune_low_magnitude
 
+epochs = 20
+
+end_step =  180*epochs
+
+# pruning_params = {
+#       'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity=0.4,
+#                                                                final_sparsity=0.80,
+#                                                                begin_step=0,
+#                                                                end_step=end_step)
+# }
+
+pruning_params = {
+   'pruning_schedule' : tfmot.sparsity.keras.ConstantSparsity(0.9, begin_step=0, frequency=100)
+    }
 
 # model_for_p = tf.keras.Sequential([tfmot.sparsity.keras.prune_low_magnitude(tf.keras.layers.Dense(512, activation='relu', input_shape=(576,))),
 #                                 tfmot.sparsity.keras.prune_low_magnitude(tf.keras.layers.Dense(128, activation='relu', input_shape=(512,))),
 #                                 tfmot.sparsity.keras.prune_low_magnitude(tf.keras.layers.Dense(85, activation = 'tanh', input_shape=(128,)))])
 
-
-model_for_p = tfmot.sparsity.keras.prune_low_magnitude(model__2)
+model_for_p = tfmot.sparsity.keras.prune_low_magnitude(model__2, **pruning_params)
 
 
 model_f_prune = tf.keras.Sequential([model__1, model_for_p])
+
+
+model_for_pruning.compile(optimizer='adam',
+              loss=RootMeanSquareLoss,
+              metrics=['mse'])
+
+model_for_pruning.summary()
+
 
 #%% Pruning fine tune
 
 model_f_prune.compile(optimizer=optimizer,
               loss=RootMeanSquareLoss,
-              metrics=['accuracy'])
+              metrics=['mse'])
 
 for i in range(6):
     model_f_prune.fit(trX[i*900:(i+1)*900], trY[i*900:(i+1)*900],
-                  batch_size=5, epochs=2,
+                  batch_size=5, epochs=epochs,
               callbacks=[tfmot.sparsity.keras.UpdatePruningStep()])
 
 
+def get_gzipped_model_size(model):
+  # Returns size of gzipped model, in bytes.
+  import os
+  import zipfile
 
+  _, keras_file = tempfile.mkstemp('.h5')
+  model.save(keras_file, include_optimizer=False)
+
+  _, zipped_file = tempfile.mkstemp('.zip')
+  with zipfile.ZipFile(zipped_file, 'w', compression=zipfile.ZIP_DEFLATED) as f:
+    f.write(keras_file)
+
+  return os.path.getsize(zipped_file)
 # wow so far works
 
 #%% Pruning Continue
 model_for_export =  tfmot.sparsity.keras.strip_pruning(model_for_p)
 
-neural_net2 =  tf.keras.Sequential([model__1, model_for_export])
+neural_net4 =  tf.keras.Sequential([model__1, model_for_export])
 
-neural_net2.compile(optimizer=optimizer,
+neural_net4.compile(optimizer='adam',
               loss=RootMeanSquareLoss,
-              metrics=['accuracy'])
+              metrics=['mse'])
+
+#%% prune official guide
+import tempfile
+
+_, keras_file = tempfile.mkstemp('.h5')
+tf.keras.models.save_model(model, keras_file, include_optimizer=False)
+print('Saved baseline model to:', keras_file)
+
+#%% poly decay prune
+
+import tensorflow_model_optimization as tfmot
+
+prune_low_magnitude = tfmot.sparsity.keras.prune_low_magnitude
+
+# Compute end step to finish pruning after 2 epochs.
+batch_size = 128
+epochs = 10
+validation_split = 0.1 # 10% of training set will be used for validation set. 
+
+end_step = 338* epochs
+
+# Define model for pruning.
+pruning_params = {
+      'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity=0.50,
+                                                                final_sparsity=0.70,
+                                                                begin_step=0,
+                                                                end_step=end_step)
+}
+
+# pruning_params = {
+#       'pruning_schedule': tfmot.sparsity.keras.ConstantSparsity(0.9, begin_step=0, frequency=100)
+#   }
+
+
+model_for_pruning = prune_low_magnitude(model, **pruning_params)
+
+# `prune_low_magnitude` requires a recompile.
+model_for_pruning.compile(optimizer='adam',
+              loss=RootMeanSquareLoss1,
+              metrics=['mse'])
+
+model_for_pruning.summary()
+
+#%%
+
+import tempfile
+
+logdir = tempfile.mkdtemp()
+
+callbacks = [
+  tfmot.sparsity.keras.UpdatePruningStep(),
+  tfmot.sparsity.keras.PruningSummaries(log_dir=logdir),
+]
+
+model_for_pruning.fit(train_data, epochs=epochs,
+                  callbacks=callbacks)
+
+#%%
+model_for_export = tfmot.sparsity.keras.strip_pruning(model_for_pruning)
+
+_, pruned_keras_file = tempfile.mkstemp('.h5')
+tf.keras.models.save_model(model_for_export, pruned_keras_file, include_optimizer=False)
+print('Saved pruned Keras model to:', pruned_keras_file)
+
+#%%
+
+converter = tf.lite.TFLiteConverter.from_keras_model(model_for_export)
+pruned_tflite_model = converter.convert()
+
+_, pruned_tflite_file = tempfile.mkstemp('.tflite')
+
+with open(pruned_tflite_file, 'wb') as f:
+  f.write(pruned_tflite_model)
+
+print('Saved pruned TFLite model to:', pruned_tflite_file)
+
+#%%
+
+def get_gzipped_model_size(file):
+  # Returns size of gzipped model, in bytes.
+  import os
+  import zipfile
+
+  _, zipped_file = tempfile.mkstemp('.zip')
+  with zipfile.ZipFile(zipped_file, 'w', compression=zipfile.ZIP_DEFLATED) as f:
+    f.write(file)
+
+  return os.path.getsize(zipped_file)
+
+#%%
+print("Size of gzipped baseline Keras model: %.2f bytes" % (get_gzipped_model_size(keras_file)))
+print("Size of gzipped pruned Keras model: %.2f bytes" % (get_gzipped_model_size(pruned_keras_file)))
+print("Size of gzipped pruned TFlite model: %.2f bytes" % (get_gzipped_model_size(pruned_tflite_file)))
+
+#%%
+
+converter = tf.lite.TFLiteConverter.from_keras_model(model_for_export)
+converter.optimizations = [tf.lite.Optimize.DEFAULT]
+quantized_and_pruned_tflite_model = converter.convert()
+
+_, quantized_and_pruned_tflite_file = tempfile.mkstemp('.tflite')
+with open(quantized_and_pruned_tflite_file, 'wb') as f:
+  f.write(quantized_and_pruned_tflite_model)
+
+print('Saved quantized and pruned TFLite model to:', quantized_and_pruned_tflite_file)
+
+print("Size of gzipped baseline Keras model: %.2f bytes" % (get_gzipped_model_size(keras_file)))
+print("Size of gzipped pruned and quantized TFlite model: %.2f bytes" % (get_gzipped_model_size(quantized_and_pruned_tflite_file)))
+
+
 #%% Random testing
 
 # modification in network 
@@ -456,7 +672,7 @@ columns = 3
 rows = 3
 for j in range( 1, columns*rows +1 ):
     
-    i=  5055+j*20
+    i=  1055+j*20
     print(i)
     tX = np.reshape(data_align[i:i+40,:,:,:], [40,100,100])
     tX = np.array(tX, dtype= np.float64)
@@ -484,7 +700,7 @@ for j in range( 1, columns*rows +1 ):
     # predd = neural_net(trX1) 
     
     
-    predd = neural_net2(tX1) 
+    predd = model(tX1) 
     
     
     
@@ -503,33 +719,6 @@ plt.show()
 
 
 
-#%% Seeing inside the network
-
-in1 = neural_net1.layers[0].layers[0](tX1).numpy() # plt.plot(in1[0,:,:,1])
-in2 = neural_net1.layers[0].layers[1](in1).numpy() # plt.plot(in2[0,:,:,1])  
-in3 = neural_net1.layers[0].layers[2](in2).numpy()
-in4 = neural_net1.layers[0].layers[3](in3).numpy()
-in5 = neural_net1.layers[0].layers[4](in4).numpy()
-in6 = neural_net1.layers[0].layers[5](in5).numpy()
-in7 = neural_net1.layers[0].layers[6](in6).numpy()
-in8 = neural_net1.layers[0].layers[7](in7).numpy()
-in9 = neural_net1.layers[0].layers[8](in8).numpy()
-
-# in3 = neural_net.layers[2](in2).numpy()
-
-# ##we can also select the model inside the inside layer
-
-#neural_net.layers[0].layers[0].layers[1]
-
-# Think of tensorflow 2 very flexible as long as we define the model very clearly
-
-# Think of each of the layer and apply independently even when there is shared network inside...
-# in2=neural_net.layers[0](trX1[:,:,:,10:20]).numpy()
-# well we can go on
-
-# ways to get the weights and biases. the layers should be in our mind in the firsthand 
-#neural_net.layers[0].layers[0].layers[0].weights
-# Keep track what you did in call and what you have in model layer definition
 
 #%%  Extras
 
@@ -612,7 +801,7 @@ recPPG = np.zeros([85])
 for j in range(5):
     
     olap = 40
-    i = 7480 -20+j*olap
+    i = 5080 -20+j*olap
     print(i)
     tX = np.reshape(data_align[i:i+40:1,:,:,:], [40,100,100])
     tX = np.array(tX, dtype= np.float64)
@@ -635,7 +824,7 @@ for j in range(5):
     
     olap =  np.int(olap*64/30)
     # predd = neural_net(trX1) 
-    predd = neural_net2(tX1) 
+    predd = model(tX1) 
     recPPG[-85:] = recPPG[-85:] + predd
     recPPG = np.concatenate((recPPG, np.zeros([olap])))
     
@@ -692,7 +881,7 @@ new_path =  os.path.join("../../../Dataset/Merl_Tim/NNSave/SavedWM")
 
 tX1 = np.array(tX1, dtype=np.float32) # holy crap I need this line
 
-neural_net2._set_inputs(tX1) # run this line once
+model_for_pruning._set_inputs(tX1) # run this line once
 
 #%% save model
 
@@ -706,7 +895,7 @@ neural_net2._set_inputs(tX1) # run this line once
 # 
 # alternatively we can get from the model itself without any saving!!!
 
-conMod = tf.lite.TFLiteConverter.from_keras_model(neural_net2)
+conMod = tf.lite.TFLiteConverter.from_keras_model(stripped_pruned_model)
 # tflite_model = converter.convert()
 
 
@@ -715,7 +904,7 @@ conMod = tf.lite.TFLiteConverter.from_keras_model(neural_net2)
 
 tfLitMod =  conMod.convert()
 
-neural_net2.layers[0].summary()
+# neural_net2.layers[0].summary()
 
 #%% lite model save both all and FP16
 
@@ -726,17 +915,18 @@ import pathlib
 tflite_models_dir = pathlib.Path("../../../Dataset/Merl_Tim/NNSave/SavedWM")
 tflite_models_dir.mkdir(exist_ok=True, parents=True)
 
-tflite_model_file = tflite_models_dir/"emon_lite_p.tflite"
+tflite_model_file = tflite_models_dir/"emon_lite_p40.tflite"
 tflite_model_file.write_bytes(tfLitMod)
 
 # further optimization
+
 conMod.optimizations = [tf.lite.Optimize.DEFAULT]
 conMod.target_spec.supported_types = [tf.float16]
 
 # save the model in **.tflite format
 
 tflite_fp16_model = conMod.convert()
-tflite_model_fp16_file = tflite_models_dir/"emon_lit_p_f16.tflite"
+tflite_model_fp16_file = tflite_models_dir/"emon_lit_p_f1640.tflite"
 tflite_model_fp16_file.write_bytes(tflite_fp16_model)
 
 
