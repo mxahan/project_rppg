@@ -44,7 +44,7 @@ Figure: Sample result of PPG approximation using the transfer learning using the
 Figure: Overall result summary using the CamSense Model and its design choices.
 
 
-# Data Collection:
+# MPSC-rPPG Data Collection:
 
 <img src="Images/DataSet_.png">
 
@@ -72,7 +72,7 @@ Please contact us to get the access to rPPG data. Upon receiving request and agr
 
 # Citation:
 
-### BibTex Format: 
+### BibTex Format:
 @article{zahid2021camsense,
   title={CamSense: A Camera-Based Contact-less Heart Activity Monitoring},
   author={Hasan, Zahid and  Ramamurthy, Sreenivasan Ramasamy and Roy, Nirmalya},
@@ -80,3 +80,23 @@ Please contact us to get the access to rPPG data. Upon receiving request and agr
   year={2021},
   publisher={Elsevier}
 }
+
+
+MPSC-lab Format:
+
+The MPSC-rPPG Dataset: 1st release September 2021
+
+This MPSC-rPPG dataset was collected to capture facial video and simultaneous wrist PPG signal. 
+. The type of the firearm based on its ability to auto-load or not is also denoted. Data was collected at a private range where the user was instructed to conducting the shooting exercise in the same manner they would during a normal day at a shooting range. Slow deliberate shots were taken, with the subject taking time to aim at a target in a standing position; feet shoulder width apart.
+
+Access the dataset here.
+
+Publications:
+
+David Welsh, Abu Zaher Faridee, Nirmalya Roy. Hybrid Distance-Based Framework for Classification of Embedded Firearm Recoil Data, in Proceedings of the 17th Workshop on Context and Activity Modeling and Recognition (CoMoRea’21), co-located with IEEE PerCom, Kassel, Germany, March 2021
+
+Md. Abdullah Al Hafiz Khan, David Welsh, and Nirmalya Roy. Firearm Detection Using Wrist Worn Tri-Axis Accelerometer Signals, in Proceedings of the 4th Workshop on sensing systems and applications using wrist worn smart devices (WristSense’18), co-located with PerCom, March 2018
+
+Dataset Description:
+
+A wrist worn AX3 Watch, Axivity Ltd tri-axis accelerometer sensor is used. Data collection was performed at 1600 Hz with offset ±16g. The age of the participant was 27 years and height and weight was 6'2'' and 180lbs respectively. The user was right handed and sensor was placed on the right wrist. Data files are saved in separate CSV files based on the firearm used.
