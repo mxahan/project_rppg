@@ -84,19 +84,18 @@ Please contact us to get the access to rPPG data. Upon receiving request and agr
 
 MPSC-lab Format:
 
-The MPSC-rPPG Dataset: 1st release September 2021
+### The MPSC-rPPG Dataset: 1st release September 2021
 
-This MPSC-rPPG dataset was collected to capture facial video and simultaneous wrist PPG signal. 
-. The type of the firearm based on its ability to auto-load or not is also denoted. Data was collected at a private range where the user was instructed to conducting the shooting exercise in the same manner they would during a normal day at a shooting range. Slow deliberate shots were taken, with the subject taking time to aim at a target in a standing position; feet shoulder width apart.
+This MPSC-rPPG dataset was collected to capture facial video at high-resolution and frame per second (input) with simultaneous wrist PPG signal (ground truth). The dataset covers personal variances, background, skin tone, brightness variations. We believe, providing open access to the MPSC-rPPG dataset would enable development and validation for different PPG extraction methods, and thus data is made available. If you use these datasets for your research, please cite the following paper. You can find the dataset in the following website link. However, please do not use any subject's face/description in your presentation, report, or paper.
 
-Access the dataset here.
+Access the dataset here. [https://github.com/mxahan/project_rppg]
 
-Publications:
+### Publication:
 
-David Welsh, Abu Zaher Faridee, Nirmalya Roy. Hybrid Distance-Based Framework for Classification of Embedded Firearm Recoil Data, in Proceedings of the 17th Workshop on Context and Activity Modeling and Recognition (CoMoRea’21), co-located with IEEE PerCom, Kassel, Germany, March 2021
+Zahid Hasan, Sreenivasan Ramasamy Ramamurthy, Nirmalya Roy. CamSense: A Camera-Based Contact-less Heart Activity Monitoring, in Proceedings of the IEEE/ACM International Conference on Connected Health: Applications, Systems and Engineering Technologies (CHASE), Washington D.C. December 2021
 
-Md. Abdullah Al Hafiz Khan, David Welsh, and Nirmalya Roy. Firearm Detection Using Wrist Worn Tri-Axis Accelerometer Signals, in Proceedings of the 4th Workshop on sensing systems and applications using wrist worn smart devices (WristSense’18), co-located with PerCom, March 2018
+### Dataset Description:
 
-Dataset Description:
+The dataset contains RGB DSLR facial videos under artificial light from 3-6 feet distance. The subjects wear Empatica E4 Wristwatch during the video collection to track the PPG simultaneously. We align the vides and corresponding Empatica PPG signal with an error bound of 1/30 seconds by leveraging the Event Marker features of Empatica.
 
-A wrist worn AX3 Watch, Axivity Ltd tri-axis accelerometer sensor is used. Data collection was performed at 1600 Hz with offset ±16g. The age of the participant was 27 years and height and weight was 6'2'' and 180lbs respectively. The user was right handed and sensor was placed on the right wrist. Data files are saved in separate CSV files based on the firearm used.
+The two hours of rPPG data contain two females and six males who volunteered multiple times, covering heterogeneity such as sex, facial hair, fitness level, skin color,  and spectacles usage in the dataset. 
