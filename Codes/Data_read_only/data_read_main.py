@@ -30,7 +30,7 @@ import pandas as pd
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_raw'
 #iD_ir = '../../../Dataset/Merl_Tim/Subject1_still/RGB_demosaiced'
 
-path_dir = '../../../Dataset/Personal_collection/MPSC_rppg/subject_001/trial_001/video/'
+path_dir = '../../../../Dataset/Personal_collection/MPSC_rppg/subject_001/trial_001/video/'
 
 ppgtotal =  pd.read_csv(path_dir +'../empatica_e4/BVP.csv')
 EventMark = pd.read_csv(path_dir+'../empatica_e4/tags.csv')
@@ -69,7 +69,7 @@ while(cap.isOpened()):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     
     gray  = gray[:,:,1]
-    #update the following ling
+    #update the following line
     gray =  gray[10:900, 720:1500]
     
     gray = cv2.resize(gray, im_size)
@@ -96,10 +96,11 @@ data =  np.array(data)
 evmarknp =  EventMark.to_numpy()
 ppgnp =  ppgtotal.to_numpy()
 
+#update the following line/s
 
 start_gap =  evmarknp[0] - 1593893213 
 end_point =  evmarknp[1] - evmarknp[0] # default (..[1] -..[0])
-data_align = data[307:307+np.int(end_point*30)+5]
 
 
-ppgnp_align =  ppgnp[np.int(start_gap*64):np.int((start_gap+end_point)*64)]
+data_align = data[307:307+np.int(end_point*30)+5]  ### Contains the video
+ppgnp_align =  ppgnp[np.int(start_gap*64):np.int((start_gap+end_point)*64)]  ### contains the aligned PPG
