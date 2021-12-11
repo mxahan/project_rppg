@@ -46,10 +46,6 @@ Figure: Overall result summary using the CamSense Model and its design choices.
 
 # MPSC-rPPG Data Collection:
 
-<img src="Images/DataSet_.png">
-
-Figure: Sample rPPG data to learn complete PPG information from raw video frames. There is PPG corresponding the video frames.
-
 
 To  collect  video  with  enough  PPG  signal and well-aligned PPG, we collect simultaneous PPG and video sensor  data.  We  collected  HD  video  using  RGB  stationery(in  a  stand)  DSLR  (Canon  D3500)  at  30  fps  in  a  laboratory setup under artificial light for 5 minutes while each volunteer was  sitting  idly  on  a  chair  three  feet  away  in  front  of  the camera.  Concurrently,  Empatica  E4  Wristwatch  tracks  the wrist PPG sampled at 64 Hz from volunteers’ dominant hand.To  align  the  video  and  PPG  data  to  the  same  time-stamp, we  leveraged  the  event  marker  feature  in  the Empatica  E4.During  that,  the  volunteers  count  to  ten  for  10  seconds.  We identified  the  exact  position  of  the  event  marker  press  of Empatica E4 by locating event marker light at particular video frames.  The  Empatica  E4  locates  the  exact  PPG  position  for the  event  markers  pressed.  This  allows  us  to  align  PPG  andvideo  with  an  error  margin  of  1/30  seconds.  
 
@@ -88,7 +84,7 @@ MPSC-lab Format:
 
 This MPSC-rPPG dataset was collected to capture facial video at high-resolution and frame per second (input) with simultaneous wrist PPG signal (ground truth). The dataset covers personal variances, background, skin tone, brightness variations. We believe, providing open access to the MPSC-rPPG dataset would enable development and validation for different PPG extraction methods, and thus data is made available. If you use these datasets for your research, please cite the following paper. You can find the dataset in the following website link. However, please do not use any subject's face/description in your presentation, report, or paper.
 
-Access the dataset here. [https://github.com/mxahan/project_rppg]
+Access the dataset [here](https://dx.doi.org/10.21227/ddgz-tx88).
 
 ### Publication:
 
@@ -98,4 +94,4 @@ Zahid Hasan, Sreenivasan Ramasamy Ramamurthy, Nirmalya Roy. CamSense: A Camera-B
 
 The dataset contains RGB DSLR facial videos under artificial light from 3-6 feet distance. The subjects wear Empatica E4 Wristwatch during the video collection to track the PPG simultaneously. We align the vides and corresponding Empatica PPG signal with an error bound of 1/30 seconds by leveraging the Event Marker features of Empatica.
 
-The two hours of rPPG data contain two females and six males who volunteered multiple times, covering heterogeneity such as sex, facial hair, fitness level, skin color,  and spectacles usage in the dataset. 
+The two hours of rPPG data contain two females and six males who volunteered multiple times, covering heterogeneity such as sex, facial hair, fitness level, skin color,  and spectacles usage in the dataset.
