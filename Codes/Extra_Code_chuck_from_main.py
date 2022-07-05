@@ -544,6 +544,7 @@ mpl.rcParams['ytick.labelsize'] = 20
 mpl.rcParams['axes.edgecolor'] = 'black'
 mpl.rcParams['axes.titlesize'] = 20
 mpl.rcParams['legend.fontsize'] = 14
+mpl.rcParams["legend.frameon"] = True
 
 # plt.savefig('cd_sample_res.eps', format = 'eps', dpi= 500)
 
@@ -573,4 +574,31 @@ def frame_repeat(img):
     temp = randint(0,39)
     img[:,:,0:40] = img[:,:, temp:temp+1]
     return img
-    
+#%% 
+
+fig = plt.figure(figsize=(19.20,10.80))
+ax = fig.add_subplot()
+ax.scatter(X_emb[0:1000,0], X_emb[0:1000,1], s = 100, cmap=1, marker='v', label = "High Frequency")
+ax.scatter(X_emb[1000:2000,0], X_emb[1000:2000,1], s= 100, cmap = 0, marker='1', label = 'Low Frequency')
+ax.legend(fontsize=25, loc = "lower right", ncol = 1)
+ax.set_title('Frequency Learning by Pretraining', fontsize =30, fontweight = 'bold')
+ax.set_xlabel('Embedding Dimension 1', fontsize =28, fontweight = 'bold')
+ax.set_ylabel('Embedding Dimension 2', fontsize = 28, fontweight= 'bold')
+
+
+fig.savefig('Freqs.svg', format = 'svg', dpi= 500)
+
+#%%
+
+fig = plt.figure(figsize=(19.20,10.80))
+plt.plot(ppgs[2], marker = '<',  linewidth = 2, markersize = 15)
+plt.plot(ppgs[3], marker = 'o',  linewidth = 2, markersize = 15)
+plt.plot(ppgs[6], marker = 'x',  linewidth = 2, markersize = 15)
+plt.legend(["Sample PPG", "Half-Cycle Shifted PPG", "Full-Cycle Shifted PPG"], fontsize = 25, loc = "upper left", ncol = 3, fancybox = True) 
+
+
+plt.xlabel('Time sample (60 sample = 1 second)', fontsize =28, fontweight = 'bold')
+plt.ylabel('PPG magnitude \n (Normalized voltage)', fontsize = 28, fontweight= 'bold')
+
+plt.title("Time Shift can generate similar and dissimilar PPG", fontsize = 30, fontweight = 'bold')
+plt.savefig('shift_.svg', format = 'svg', dpi = 500)
